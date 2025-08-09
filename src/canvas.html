@@ -58,6 +58,44 @@
         <canvas id="drawingCanvas" width="800" height="600"></canvas>
     </div>
 
-    <script src="cube-code.js"></script>
+    <!-- Initialize canvas context first -->
+    <script>
+        // Make canvas and context globally available
+        window.initCanvas = function() {
+            const canvas = document.getElementById('drawingCanvas');
+            if (!canvas) {
+                console.error('Canvas element not found');
+                return false;
+            }
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Could not get 2D context');
+                return false;
+            }
+
+            // Set default styles
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#000000';
+            ctx.fillStyle = '#3498db';
+
+            // Make them globally available
+            window.canvas = canvas;
+            window.ctx = ctx;
+
+            console.log('Canvas context initialized');
+            return true;
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', window.initCanvas);
+    </script>
+
+    <!-- Load scripts -->
+    <script src="line.js"></script>
+    <script src="rectangle.js"></script>
+    <script src="circle.js"></script>
+    <script src="clear.js"></script>
+    <script src="cube.js"></script>
 </body>
 </html>
