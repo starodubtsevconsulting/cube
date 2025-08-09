@@ -1,63 +1,48 @@
+import { Figure3D } from './common/figures';
 import { Point3D } from './types';
 
-// Global variable to store cube vertices
-let vertices: Point3D[] = [];
+class Cube extends Figure3D {
 
-// Cube drawing functionality
-function drawCube(): void {
-    if (!window.ctx) {
-        console.error('Canvas context not found');
-        return;
+
+    constructor() {
+        super();
+        // Initialize cube vertices
+        this.vertices = [
+            // front
+            // bottom
+            { x: 0,   y: 0, z: 100 }, // bottom left
+            { x: 100, y: 0, z: 100 }, // bottom right
+            // top
+            { x: 0,   y: 100, z: 100 }, // top left
+            { x: 100, y: 100, z: 100 }, // top right
+
+            // back
+            // bottom
+            { x: 0,   y: 0, z: 200 }, // bottom left
+            { x: 100, y: 0, z: 200 }, // bottom right
+            // top
+            { x: 0,   y: 100, z: 200 }, // top left
+            { x: 100, y: 100, z: 200 }, // top right
+        ];
     }
-    
-    // domain specific language:
-    // - vertices - array of points
-    // - edges - array of lines (that connect vertices)
-    // - faces - array of polygons (surfaces, rectangles in this case)
 
-    // - handedness -  the orientation of our 3D coordinate system: for example: right-handed (classy)
+    /**
+     * Draws the cube on the canvas
+     */
+    public draw(): void {
+        if (!window.ctx) {
+            console.error('Canvas context not found');
+            return;
+        }
 
-    // Cube has 8 vertices (dots, points)
-    // Defined in right-hand rule:
+        console.log('Drawing cube...');
+        
+        // TODO: Add actual drawing logic here
+        // For now, just log the vertices
+        console.log('Cube vertices:', this.vertices);
+    }
 
-    // Right-hand rule: (see docs/napkin-notes.png)
-    //    - Index = +X (to the right)
-    //    - Middle = +Y (up)
-    //    - Thumb = +Z (away from us, into the page)
-    //  - The camera at the origin looking down the –Z axis sees objects in front.
-    //  - A cube with z=100 is farther (deeper) away than one at z=50.
 
-    vertices = [
-        // front
-        // bottom
-        { x: 0,   y: 0, z: 100 }, // bottom left
-        { x: 100, y: 0, z: 100 }, // bottom right
-        // top
-        { x: 0,   y: 100, z: 100 }, // top left
-        { x: 100, y: 100, z: 100 }, // top right
-
-        // back
-        // bottom
-        { x: 0,   y: 0, z: 200 }, // bottom left
-        { x: 100, y: 0, z: 200 }, // bottom right
-        // top
-        { x: 0,   y: 100, z: 200 }, // top left
-        { x: 100, y: 100, z: 200 }, // top right
-    ];
-    console.log('Drawing cube...');
-}
-
-/**
- * Projects a 3D point to 2D screen coordinates
- * @param worldPoint3D - The 3D point in world coordinates
- * @returns Screen coordinates in pixels
- */
-function projectToScreen(worldPoint3D: Point3D): { x: number; y: number } {
-    // Simple orthographic projection for now
-    return {
-        x: worldPoint3D.x,
-        y: worldPoint3D.y
-    };
 }
 
 // Initialize cube drawing when the DOM is fully loaded
@@ -65,7 +50,11 @@ document.addEventListener('DOMContentLoaded', (): void => {
     const drawCubeBtn = document.getElementById('drawTheCube');
     if (drawCubeBtn) {
         console.log('Cube button found, adding event listener...');
-        drawCubeBtn.addEventListener('click', drawCube);
+        
+        drawCubeBtn.addEventListener('click', () => {
+            const cube = new Cube();
+            cube.draw();
+        });
     } else {
         console.error('Draw Cube button not found');
     }
