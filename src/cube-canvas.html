@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Cube</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #canvas-container {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #clearCanvas {
+            background-color: #f44336;
+        }
+        #clearCanvas:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <h1>The Cube</h1>
+        <div class="controls">
+            <button id="drawLine">Draw Line</button>
+            <button id="drawRect">Draw Rectangle</button>
+            <button id="drawCircle">Draw Circle</button>
+            <button id="drawTheCube">Draw the Cube</button>
+            <button id="clearCanvas">x Clear Canvas</button>
+        </div>
+        <canvas id="drawingCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set line style
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#000000';
+        ctx.fillStyle = '#3498db';
+        
+        // Drawing functions
+        function drawLine() {
+            ctx.beginPath();
+            ctx.moveTo(100, 100);
+            ctx.lineTo(700, 500);
+            ctx.stroke();
+        }
+        
+        function drawRectangle() {
+            ctx.fillRect(200, 200, 400, 200);
+            ctx.strokeRect(200, 200, 400, 200);
+        }
+        
+        function drawCircle() {
+            ctx.beginPath();
+            ctx.arc(400, 300, 150, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Event listeners
+        document.getElementById('drawLine').addEventListener('click', drawLine);
+        document.getElementById('drawRect').addEventListener('click', drawRectangle);
+        document.getElementById('drawCircle').addEventListener('click', drawCircle);
+        document.getElementById('clearCanvas').addEventListener('click', clearCanvas);
+        
+        // Initial drawing
+        drawLine();
+        drawRectangle();
+        drawCircle();
+        
+        // Interactive drawing
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+        
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+    </script>
+</body>
+</html>
