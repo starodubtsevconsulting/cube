@@ -1,3 +1,4 @@
+"use strict";
 // Canvas clearing functionality
 function clearCanvas() {
     if (!window.ctx || !window.canvas) {
@@ -6,12 +7,14 @@ function clearCanvas() {
     }
     window.ctx.clearRect(0, 0, window.canvas.width, window.canvas.height);
 }
-
+// Initialize canvas clearing when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     const clearCanvasBtn = document.getElementById('clearCanvas');
     if (clearCanvasBtn) {
         clearCanvasBtn.addEventListener('click', clearCanvas);
-    } else {
+    }
+    else {
         console.error('Clear Canvas button not found');
     }
 });
+//# sourceMappingURL=clear.js.map
