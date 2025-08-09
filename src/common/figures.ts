@@ -23,6 +23,11 @@ export abstract class Figure3D {
     /**
      * Draws the figure on the canvas
      * Must be implemented by concrete figure classes
+     * What it would do is actually to draw every edge
+     *  (line by line, literally - "connected dots"
+     *  - since that is how we draw - by lines, by edges)
+     *  As we draw, we would also use the projectToScreen() function
+     *   to place vertices correctly to the 2d world.
      */
     public abstract draw(): void;
 
