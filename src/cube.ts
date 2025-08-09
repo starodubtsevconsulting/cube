@@ -1,5 +1,4 @@
 import { Figure3D } from './common/figures';
-import { Point3D } from './types';
 
 class Cube extends Figure3D {
 
@@ -24,6 +23,16 @@ class Cube extends Figure3D {
             { x: 0,   y: 100, z: 200 }, // top left
             { x: 100, y: 100, z: 200 }, // top right
         ];
+
+        // Defining the lines - the edges, which connect the vertices
+        // so the 0, 1 means that 0's  is connected to 1's vertex
+        // we have total of 12 edges (same as human has 12 limbs),
+        // so not only human is close to banana, but also human is close to the cube).
+        this.edges = [
+            [0,1], [1,3], [3,2], [2,0], // front
+            [4,5], [5,7], [7,6], [6,4], // back
+            [0,4], [1,5], [2,6], [3,7]  // connect front and back
+        ]
     }
 
     /**

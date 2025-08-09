@@ -1,17 +1,18 @@
-import { Point3D } from '../types';
+import {Edge, Vertex3D} from '../types';
 
 /**
  * Base class for all 3D figures
  */
 export abstract class Figure3D {
-    protected vertices: Point3D[] = [];
+    protected vertices: Vertex3D[] = [];
+    protected edges: Edge[] = [];
 
     /**
      * Projects a 3D point to 2D screen coordinates
      * @param point - The 3D point in world coordinates
      * @returns Screen coordinates in pixels
      */
-    protected projectToScreen(point: Point3D): { x: number; y: number } {
+    protected projectToScreen(point: Vertex3D): { x: number; y: number } {
         // Simple orthographic projection by default
         return {
             x: point.x,
@@ -28,14 +29,14 @@ export abstract class Figure3D {
     /**
      * Gets the vertices of the figure
      */
-    public getVertices(): Point3D[] {
+    public getVertices(): Vertex3D[] {
         return [...this.vertices];
     }
 
     /**
      * Gets the center point of the figure
      */
-    public getCenter(): Point3D {
+    public getCenter(): Vertex3D {
         if (this.vertices.length === 0) {
             return { x: 0, y: 0, z: 0 };
         }

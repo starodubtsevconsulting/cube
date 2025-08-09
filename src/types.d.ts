@@ -8,12 +8,15 @@ declare global {
   }
 }
 
-// Define a 3D point interface
-export interface Point3D {
+// Define a 3D point interface (better name is Vertex3D)
+export interface Vertex3D {
   x: number;
   y: number;
   z: number;
 }
+
+/** Edges connect two vertices. That is the only way we can draw anything using the lines */
+export type Edge = [number, number];
 
 // Define a 2D point interface
 export interface Point2D {
