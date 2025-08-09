@@ -9,6 +9,8 @@ export abstract class Figure3D {
 
     /**
      * Projects a 3D point to 2D screen coordinates
+     * In fact, that is "the most important function",
+     * as it reflects the reality for us to the way see it on the screen.
      * @param point - The 3D point in world coordinates
      * @returns Screen coordinates in pixels
      */
