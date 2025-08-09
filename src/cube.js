@@ -9,7 +9,18 @@ function drawCube() {
     // - edges - array of lines (that connect vertices)
     // - faces - array of polygons (surfaces, rectangles in this case)
 
+    // - handedness -  the orientation of our 3D coordinate system: for example: right-handed (classy)
+
     // Cube has 8 vertices (dots, points)
+    // Defined in right-hand rule:
+
+    // Right-hand rule: (see docs/napkin-notes.png)
+    //    - Index = +X (to the right)
+    //    - Middle = +Y (up)
+    //    - Thumb = +Z (away from us, into the page)
+    //  - The camera at the origin looking down the –Z axis sees objects in front.
+    //  - A cube with z=100 is farther (deeper) away than one at z=50.
+
     vertices = [
         // front
         // bottom
