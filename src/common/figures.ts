@@ -1,4 +1,4 @@
-import {Edge, Vertex3D} from '../types';
+import {Edge, Vertex3D} from './types';
 
 /**
  * Base class for all 3D figures
@@ -31,33 +31,56 @@ export abstract class Figure3D {
      *  As we draw, we would also use the projectToScreen() function
      *   to place vertices correctly to the 2d world.
      */
-    public abstract draw(): void;
+    public draw(): void {
+        console.log(`Drawing figure with ${this.edges.length} edges...`);
+
+        for (const [a, b] of this.edges) {
+            if (a >= this.vertices.length || b >= this.vertices.length) {
+                console.error(`Edge [${a}, ${b}] references non-existent vertices (total vertices: ${this.vertices.length})`);
+                continue;
+            }
+
+            const p1 = this.projectToScreen(this.vertices[a]);
+            const p2 = this.projectToScreen(this.vertices[b]);
+
+            console.log(`  Edge [${a},${b}]: (${p1.x},${p1.y}) to (${p2.x},${p2.y})`);
+
+            window.ctx?.moveTo(p1.x, p1.y);
+            window.ctx?.lineTo(p2.x, p2.y);
+            window.ctx?.stroke();
+        }
+    }
 
     /**
-     * Gets the vertices of the figure
+     * Returns the vertices of the figure
+     * @returns Array of 3D vertices
      */
     public getVertices(): Vertex3D[] {
         return [...this.vertices];
     }
 
     /**
-     * Gets the center point of the figure
+     * Calculates the center of the figure
+     * @returns The center point of the figure
      */
     public getCenter(): Vertex3D {
         if (this.vertices.length === 0) {
             return { x: 0, y: 0, z: 0 };
         }
-        
-        const sum = this.vertices.reduce((acc, vertex) => ({
-            x: acc.x + vertex.x,
-            y: acc.y + vertex.y,
-            z: acc.z + vertex.z
-        }), { x: 0, y: 0, z: 0 });
-        
+
+        const sum = this.vertices.reduce(
+            (acc, vertex) => ({
+                x: acc.x + vertex.x,
+                y: acc.y + vertex.y,
+                z: acc.z + vertex.z,
+            }),
+            { x: 0, y: 0, z: 0 }
+        );
+
         return {
             x: sum.x / this.vertices.length,
             y: sum.y / this.vertices.length,
-            z: sum.z / this.vertices.length
+            z: sum.z / this.vertices.length,
         };
     }
 }
