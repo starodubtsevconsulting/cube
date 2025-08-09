@@ -8,16 +8,6 @@ function drawCube() {
     console.log('Drawing cube...');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const drawCubeBtn = document.getElementById('drawTheCube');
-    if (drawCubeBtn) {
-        console.log('Cube button found, adding event listener...');
-        drawCubeBtn.addEventListener('click', drawCube);
-    } else {
-        console.error('Draw Cube button not found');
-    }
-});
-
 // Cube drawing functionality
 document.addEventListener('DOMContentLoaded', () => {
     const drawCubeBtn = document.getElementById('drawTheCube');
