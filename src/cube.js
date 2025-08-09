@@ -38,8 +38,17 @@ function drawCube() {
         { x: 0,   y: 100, z: 200 }, // top left
         { x: 100, y: 100, z: 200 }, // top right
     ];
-
     console.log('Drawing cube...');
+}
+
+/**
+ * We would need to project each vertex to the screen.
+ * Since we have a 3D world, we need to project it to a 2D screen. * @param worldPoint
+ *  @param {Object} worldPoint3D - The 3D point with {x, y, z} in world coordinates.
+ *  @returns {Object} Screen coordinates {sx, sy}, in pixels.
+ */
+function projectToScreen(worldPoint3D) {
+
 }
 
 // Cube drawing functionality
