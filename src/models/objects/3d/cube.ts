@@ -3,18 +3,57 @@ import { Edge, Vertex3D } from '../../../types';
 
 /* ---------- CameraEye ---------- */
 export class CameraEye {
+
     position: Vertex3D = { x: 0, y: 0, z: 0 };
+
+    /**
+     * Setting the vertical field of view 𝛼 α to 60° (converted to radians).
+     * fovY = 60° is a common camera/game FOV (on 16:9 it’s ≈ 90° horizontal).
+     * 60° is a sane default. It feels natural on a 16:9 screen (≈90° horizontal), with low distortion and no “tunnel vision.”
+     * Human eye: 120-200° (for the record)
+     * Bigger FOV ⇒ “zoom out.”
+     */
     fovY = (60 * Math.PI) / 180;
 
+    /**
+     * Projects a 3D world-space point into 2D normalized screen coordinates.
+     *
+     * This is the **core perspective projection math** step:
+     *   - Input: world-space point (p) and the current viewport aspect ratio.
+     *   - Output: normalized coordinates (xn, yn) where:
+     *       (0,0) = screen center
+     *       ±1 on Y = top/bottom edges of the virtual "1×1" screen
+     *       ±1 on X = left/right edges (after aspect ratio correction)
+     *
+     * Steps:
+     *   1. Translate the point so the camera position becomes the origin.
+     *   2. Ignore points with z <= 0 (behind or at the camera).
+     *   3. Apply perspective division:
+     *        - Scale X and Y by distance from camera (cz) and by focal length factor.
+     *        - Focal length factor is derived from vertical field of view:
+     *            t = tan(fovY / 2)
+     *        - Horizontal coordinate is divided by aspect ratio to keep proportions.
+     *   4. Return normalized coordinates.
+     *
+     * These normalized coordinates are later mapped to pixel space
+     * by ScreenSpace.toPixels().
+     *
+     * @param p 3D point in world space
+     * @param aspect viewport aspect ratio (width / height)
+     * @returns normalized 2D coordinates or null if point is behind camera
+     */
     projectNorm(p: Vertex3D, aspect: number): { x: number; y: number } | null {
         const cx = p.x - this.position.x;
         const cy = p.y - this.position.y;
         const cz = p.z - this.position.z;
+
+        // Behind or at the camera → no projection
         if (!(cz > 0)) return null;
 
-        const t = Math.tan(this.fovY / 2);
-        const xn = (cx / (cz * t)) / aspect;
-        const yn =  cy / (cz * t);
+        const t = Math.tan(this.fovY / 2); // focal length factor
+        const xn = (cx / (cz * t)) / aspect; // normalized X
+        const yn =  cy / (cz * t);           // normalized Y
+
         if (!Number.isFinite(xn) || !Number.isFinite(yn)) return null;
         return { x: xn, y: yn };
     }
@@ -23,11 +62,30 @@ export class CameraEye {
 /* ---------- ScreenSpace ---------- */
 export class ScreenSpace {
     constructor(public width: number, public height: number, public zoom = 1) {}
+
+    /**
+     * Converts normalized screen coordinates (from CameraEye.projectNorm)
+     * into actual pixel coordinates on the canvas.
+     *
+     * Projection pipeline:
+     *   1. CameraEye.projectNorm(...) → 3D → 2D normalized coordinates:
+     *        - (0,0) is screen center
+     *        - ±1 on Y = top/bottom edges of the virtual "1×1" screen
+     *        - aspect ratio already applied
+     *   2. ScreenSpace.toPixels(...) → normalized → pixel coordinates:
+     *        - Shift origin to canvas center
+     *        - Scale to canvas height (apply zoom factor)
+     *        - Flip Y so +Y is up in math space, down in pixel space
+     *
+     * @param n Normalized 2D coordinates from CameraEye.projectNorm
+     * @returns Pixel coordinates ready for drawing on the canvas
+     */
     toPixels(n: { x: number; y: number }) {
         const cx = this.width / 2, cy = this.height / 2;
         const s = (this.height / 2) * this.zoom;
         return { x: cx + n.x * s, y: cy - n.y * s };
     }
+
 }
 
 /* ---------- helpers ---------- */
@@ -143,7 +201,6 @@ export function drawTheCube() {
     
     const screen = new ScreenSpace(canvas.width, canvas.height, 1); // zoom 1x
     const camera = new CameraEye();
-    camera.fovY = (60 * Math.PI) / 180; // 60°
 
     const world = new WorldSpace(camera, screen);
     const cube = new Cube();
