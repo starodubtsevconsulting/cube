@@ -77,12 +77,13 @@ export abstract class Figure3D {
     }
 }
 
-/* ---------- Cube (rotatable) ---------- */
+/* ---------- Cube (rotatable and movable) ---------- */
 export class Cube extends Figure3D {
     private base: Vertex3D[];
     public center: Vertex3D = { x: 50, y: 50, z: 150 };
     public yaw = 0;
     public pitch = 0;
+    public position = { x: 0, y: 0, z: 0 }; // Position offset for movement
 
     constructor() {
         super();
@@ -105,49 +106,121 @@ export class Cube extends Figure3D {
     }
 
     applyRotation() {
-        this.vertices = this.base.map(v => rotX(rotY(v, this.center, this.yaw), this.center, this.pitch));
+        // First apply rotation
+        const rotated = this.base.map(v => rotX(rotY(v, this.center, this.yaw), this.center, this.pitch));
+        
+        // Then apply translation
+        this.vertices = rotated.map(v => ({
+            x: v.x + this.position.x,
+            y: v.y + this.position.y,
+            z: v.z + this.position.z
+        }));
+    }
+    
+    // Move the cube by the specified amount
+    move(dx: number, dy: number, dz = 0) {
+        this.position.x += dx;
+        this.position.y += dy;
+        this.position.z += dz;
+        this.applyRotation();
     }
 }
 
-/* ---------- bootstrap (mouse drag + wheel zoom) ---------- */
-document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('drawTheCube');
-    if (!btn) return;
+/* ---------- Function to draw the cube ---------- */
+export function drawTheCube() {
+    console.log('Draw Cube function called');
+    const canvas = (window as any).canvas as HTMLCanvasElement;
+    if (!canvas) {
+        console.error('Canvas not found');
+        return;
+    }
+    
+    const ctx = (window as any).ctx as CanvasRenderingContext2D;
+    if (!ctx) {
+        console.error('Canvas context not found');
+        return;
+    }
+    
+    const screen = new ScreenSpace(canvas.width, canvas.height, 1); // zoom 1x
+    const camera = new CameraEye();
+    camera.fovY = (60 * Math.PI) / 180; // 60°
 
-    btn.addEventListener('click', () => {
-        const canvas = (window as any).canvas as HTMLCanvasElement;
-        const screen = new ScreenSpace(canvas.width, canvas.height, 1); // start 1x
-        const camera = new CameraEye();
-        const world = new WorldSpace(camera, screen);
-        const cube = new Cube();
+    const world = new WorldSpace(camera, screen);
+    const cube = new Cube();
 
-        world.addFigure(cube);
-        world.render();
+    world.addFigure(cube);
+    world.render();
 
-        // drag to rotate
-        let dragging = false, lastX = 0, lastY = 0;
-        const yawSpeed = 0.01, pitchSpeed = 0.01;
+    console.log('Cube drawn and ready for interaction');
 
-        canvas.onmousedown = (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; };
-        canvas.onmouseup = () => { dragging = false; };
-        canvas.onmouseleave = () => { dragging = false; };
-        canvas.onmousemove = (e) => {
-            if (!dragging) return;
-            const dx = e.clientX - lastX;
-            const dy = e.clientY - lastY;
-            lastX = e.clientX; lastY = e.clientY;
-            cube.yaw   += dx * yawSpeed;
+    // drag to rotate or move
+    let dragging = false, lastX = 0, lastY = 0;
+    const yawSpeed = 0.01, pitchSpeed = 0.01;
+    const moveSpeed = 1; // Reduced for finer control
+
+    canvas.onmousedown = (e) => { 
+        dragging = true; 
+        lastX = e.clientX; 
+        lastY = e.clientY; 
+    };
+    
+    canvas.onmouseup = () => { dragging = false; };
+    canvas.onmouseleave = () => { dragging = false; };
+    
+    canvas.onmousemove = (e) => {
+        if (!dragging) return;
+        
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        lastX = e.clientX; 
+        lastY = e.clientY;
+        
+        if (e.shiftKey) {
+            // Move the cube when Shift key is pressed
+            cube.move(dx * moveSpeed, -dy * moveSpeed); // Invert Y for natural movement
+        } else {
+            // Rotate the cube when no modifier key is pressed
+            cube.yaw += dx * yawSpeed;
             cube.pitch += dy * pitchSpeed;
             cube.applyRotation();
-            world.render();
-        };
+        }
+        
+        world.render();
+    };
 
-        // wheel to zoom (scale screen)
-        canvas.onwheel = (e) => {
-            e.preventDefault();
-            const factor = e.deltaY < 0 ? 1.1 : 0.9;
-            screen.zoom = Math.max(0.2, Math.min(5, screen.zoom * factor));
-            world.render();
-        };
-    });
+    // wheel to zoom (scale screen)
+    canvas.onwheel = (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        screen.zoom = Math.max(0.2, Math.min(5, screen.zoom * factor));
+        world.render();
+    };
+    
+    // Display a simple message on the canvas to show controls
+    ctx.font = '12px Arial';
+    ctx.fillStyle = 'black';
+    ctx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, canvas.height - 10);
+}
+
+/* ---------- Initialize event listener ---------- */
+export function initCubeDrawing() {
+    console.log('Initializing cube drawing');
+    const btn = document.getElementById('drawTheCube');
+    if (btn) {
+        btn.addEventListener('click', drawTheCube);
+        console.log('Draw cube button listener added');
+    } else {
+        console.error('Draw cube button not found');
+    }
+}
+
+// Make functions globally available
+if (typeof window !== 'undefined') {
+    (window as any).drawTheCube = drawTheCube;
+    (window as any).initCubeDrawing = initCubeDrawing;
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initCubeDrawing();
 });
