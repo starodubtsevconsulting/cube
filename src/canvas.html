@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Cube</title>
     <link rel="stylesheet" href="styles/canvas.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 </head>
 <body>
     <div id="canvas-container">
@@ -50,13 +53,24 @@
 
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', window.initCanvas);
+        
+        // Dynamic script loading with cache busting
+        function loadScript(src) {
+            const timestamp = new Date().getTime();
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = src + '?v=' + timestamp;
+            document.body.appendChild(script);
+        }
+        
+        // Wait for DOM to be loaded before adding scripts
+        document.addEventListener('DOMContentLoaded', function() {
+            loadScript('../dist/models/objects/2d/line.js');
+            loadScript('../dist/models/objects/2d/rectangle.js');
+            loadScript('../dist/models/objects/2d/circle.js');
+            loadScript('../dist/clear.js');
+            loadScript('../dist/models/objects/3d/cube.js');
+        });
     </script>
-
-    <!-- Load compiled JavaScript files from dist directory -->
-    <script src="../dist/models/objects/2d/line.js" type="module"></script>
-    <script src="../dist/models/objects/2d/rectangle.js" type="module"></script>
-    <script src="../dist/models/objects/2d/circle.js" type="module"></script>
-    <script src="../dist/clear.js" type="module"></script>
-    <script src="../dist/models/objects/3d/cube.js" type="module"></script>
 </body>
 </html>
