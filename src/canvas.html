@@ -28,83 +28,66 @@
 
     <!-- Initialize canvas context first -->
     <script>
-        // Make canvas and context globally available
-        window.initCanvas = function() {
-            const canvas = document.getElementById('drawingCanvas');
-            if (!canvas) {
-                console.error('Canvas element not found');
-                return false;
-            }
-
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                console.error('Could not get 2D context');
-                return false;
-            }
-
-            // Set default styles
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#000000';
-            ctx.fillStyle = '#3498db';
-
-            // Make them globally available
-            window.canvas = canvas;
-            window.ctx = ctx;
-
-            console.log('Canvas context initialized');
-            return true;
-        };
-
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            window.initCanvas();
-            console.log('Canvas initialized in DOMContentLoaded');
-
-            // Verify global variables
-            setTimeout(() => {
-                console.log('Checking globals:',
-                    'canvas:', window.canvas ? 'OK' : 'MISSING',
-                    'ctx:', window.ctx ? 'OK' : 'MISSING');
-            }, 500);
-        });
-
-        // Dynamic script loading with cache busting
-        function loadScript(src) {
+        let canvas;
+        let ctx;
+        function loadScript(url) {
             return new Promise((resolve, reject) => {
-                const timestamp = new Date().getTime();
                 const script = document.createElement('script');
-                script.type = 'module';
-                script.src = src + '?v=' + timestamp;
-                script.onload = () => {
-                    console.log('Script loaded:', src);
-                    resolve();
-                };
-                script.onerror = () => {
-                    console.error('Failed to load script:', src);
-                    reject();
-                };
-                document.body.appendChild(script);
+                // Add cache-busting query parameter
+                script.src = url + '?v=' + new Date().getTime();
+                script.type = 'module'; // Add type="module" for ES modules
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Script load error for ${url}`));
+                document.head.appendChild(script);
             });
         }
 
-        // Wait for DOM to be loaded before adding scripts
+        function initCanvas() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Make canvas and context available globally
+            window.canvas = canvas;
+            window.ctx = ctx;
+            console.log('Canvas initialized and exposed globally');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Loading scripts...');
-            // Load scripts in sequence to ensure proper initialization order
+            // Load version module first
             loadScript('../dist/version.js')
-                .then(() => loadScript('../dist/models/objects/2d/line.js'))
+                .then(() => {
+                    // Start loading 2D modules
+                    return loadScript('../dist/models/objects/2d/line.js');
+                })
                 .then(() => loadScript('../dist/models/objects/2d/rectangle.js'))
                 .then(() => loadScript('../dist/models/objects/2d/circle.js'))
                 .then(() => loadScript('../dist/clear.js'))
+                // Load 3D modules in dependency order
+                .then(() => loadScript('../dist/models/objects/3d/world-space.js'))
+                .then(() => loadScript('../dist/models/objects/3d/camera-eye.js'))
+                .then(() => loadScript('../dist/models/objects/3d/screen-space.js'))
+                .then(() => loadScript('../dist/models/objects/3d/figure-3d.js'))
                 .then(() => loadScript('../dist/models/objects/3d/cube.js'))
+                .then(() => loadScript('../dist/models/objects/3d/world-3d.js'))
+                .then(() => loadScript('../dist/models/objects/3d/cube-controller.js'))
                 .then(() => {
                     console.log('All scripts loaded successfully');
+
+                    // Initialize canvas
+                    initCanvas();
+
+                    // Initialize cube drawing
+                    if (window.initCubeDrawing) {
+                        window.initCubeDrawing();
+                    } else {
+                        console.error('initCubeDrawing function not found');
+                    }
 
                     // Display version using the version module
                     if (window.appVersion && typeof window.appVersion.toString === 'function') {
                         console.log(`Running version: ${window.appVersion.toString()}`);
 
-                        // Update version element directly1
+                        // Update version element directly
                         const versionElement = document.getElementById('app-version');
                         if (versionElement) {
                             versionElement.textContent = `Version: ${window.appVersion.toString()}`;
@@ -124,9 +107,6 @@
                     setTimeout(() => {
                         console.log('Re-initializing event listeners');
                         // Force re-initialization of event handlers if modules export init functions
-                        if (window.initCubeDrawing) {
-                            window.initCubeDrawing();
-                        }
                         if (window.initLineDrawing) {
                             window.initLineDrawing();
                         }
