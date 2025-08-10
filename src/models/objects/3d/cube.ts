@@ -1,6 +1,28 @@
 /// <reference path="../../../types.d.ts" />
 import {Edge, Vertex3D} from '../../../types';
 
+export class WorldSpace {
+    private figures: Figure3D[] = [];
+    
+    /**
+     * Renders all figures in the world space
+     */
+    render(): void {
+        // run draw on every figure
+        for (const figure of this.figures) {
+            figure.draw();
+        }
+    }
+    
+    /**
+     * Adds a figure to the world space
+     * @param figure - The 3D figure to add
+     */
+    addFigure(figure: Figure3D): void {
+        this.figures.push(figure);
+    }
+}
+
 /**
  * Base class for all 3D figures
  */
@@ -99,23 +121,6 @@ export class Cube extends Figure3D {
     }
 
     /**
-     * Draws the cube on the canvas
-     */
-    public draw(): void {
-        if (!window.ctx) {
-            console.error('Canvas context not found');
-            return;
-        }
-
-        console.log('Drawing cube...');
-        
-        // TODO: Add actual drawing logic here
-        // For now, just log the vertices
-        console.log('Cube vertices:', this.vertices);
-    }
-
-
-    /**
      * Calculates the center of the figure
      * @returns The center point of the figure
      */
@@ -150,8 +155,10 @@ document.addEventListener('DOMContentLoaded', (): void => {
         console.log('Cube button found, adding event listener...');
         
         drawCubeBtn.addEventListener('click', () => {
+            const world = new WorldSpace();
             const cube = new Cube();
-            cube.draw();
+            world.addFigure(cube);
+            world.render();
         });
     } else {
         console.error('Draw Cube button not found');
