@@ -127,6 +127,36 @@ export class WorldSpace {
 export abstract class Figure3D {
     protected vertices: Vertex3D[] = [];
     protected edges: Edge[] = [];
+    
+    // Base properties that transformable figures should have
+    protected base: Vertex3D[] = [];
+    
+    /**
+     * The pivot point for rotation in model space (before translation).
+     * Rotations (yaw/pitch) happen around this point.
+     * This is typically the center of the object in model space.
+     */
+    protected center: Vertex3D = { x: 0, y: 0, z: 0 };
+    
+    /**
+     * Rotation around the Y axis (yaw), in radians.
+     * Positive yaw turns the object to the right, negative to the left.
+     * Think "looking left/right."
+     */
+    protected yaw: number = 0;
+    
+    /**
+     * Rotation around the X axis (pitch), in radians.
+     * Positive pitch tilts the object upward, negative downward.
+     * Think "looking up/down."
+     */
+    protected pitch: number = 0;
+    
+    /**
+     * Translation offset applied after rotation, in world space.
+     * This moves the object's position relative to the world origin.
+     */
+    protected position: Vertex3D = { x: 0, y: 0, z: 0 };
 
     /** Y-rotation of a single point around center */
     protected rotY(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
@@ -188,6 +218,20 @@ export abstract class Figure3D {
         }));
     }
 
+    /**
+     * Updates the transform by applying rotation and translation.
+     * Subclasses should call this after modifying position, yaw, or pitch.
+     */
+    public updateTransform(): void {
+        this.applyTransform(
+            this.base,
+            this.center,
+            this.yaw,
+            this.pitch,
+            this.position
+        );
+    }
+
     public draw(camera: CameraEye, screen: ScreenSpace, aspect: number): void {
         for (const [a, b] of this.edges) {
             if (a >= this.vertices.length || b >= this.vertices.length) continue;
@@ -206,11 +250,11 @@ export abstract class Figure3D {
 
 /* ---------- Cube (rotatable and movable) ---------- */
 export class Cube extends Figure3D {
-    private base: Vertex3D[];
+    // Override the base properties with Cube-specific values
     public center: Vertex3D = { x: 0, y: 0, z: 400 };
     public yaw = 0;
     public pitch = 0;
-    public position = { x: 0, y: 0, z: 0 }; // Position offset for movement
+    public position = { x: 0, y: 0, z: 0 };
 
     constructor() {
         super();
@@ -218,7 +262,6 @@ export class Cube extends Figure3D {
         const CUBE_HALF_EDGE = CUBE_EDGE_LENGTH / 2; // half edge, for centering
         const CUBE_CENTER_Z = 400;         // depth from camera (Z axis) where cube sits
         
-        this.center = { x: 0, y: 0, z: CUBE_CENTER_Z };
         this.base = [
             { x: -CUBE_HALF_EDGE, y: -CUBE_HALF_EDGE, z: CUBE_CENTER_Z - CUBE_HALF_EDGE }, 
             { x:  CUBE_HALF_EDGE, y: -CUBE_HALF_EDGE, z: CUBE_CENTER_Z - CUBE_HALF_EDGE },
@@ -234,19 +277,15 @@ export class Cube extends Figure3D {
             [4,5], [5,7], [7,6], [6,4],
             [0,4], [1,5], [2,6], [3,7]
         ];
-        this.applyRotation();
+        this.updateTransform();
     }
 
-    applyRotation() {
-        this.applyTransform(this.base, this.center, this.yaw, this.pitch, this.position);
-    }
-    
     // Move the cube by the specified amount
     move(dx: number, dy: number, dz = 0) {
         this.position.x += dx;
         this.position.y += dy;
         this.position.z += dz;
-        this.applyRotation();
+        this.updateTransform();
     }
 }
 
@@ -281,16 +320,17 @@ export function drawTheCube() {
     const yawSpeed = 0.01, pitchSpeed = 0.01;
     const moveSpeed = 1; // Reduced for finer control
 
-    canvas.onmousedown = (e) => { 
+    canvas.addEventListener('pointerdown', e => {
         dragging = true; 
         lastX = e.clientX; 
-        lastY = e.clientY; 
-    };
+        lastY = e.clientY;
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    });
     
-    canvas.onmouseup = () => { dragging = false; };
-    canvas.onmouseleave = () => { dragging = false; };
+    canvas.addEventListener('pointerup', () => { dragging = false; });
+    canvas.addEventListener('pointerleave', () => { dragging = false; });
     
-    canvas.onmousemove = (e) => {
+    canvas.addEventListener('pointermove', (e) => {
         if (!dragging) return;
         
         const dx = e.clientX - lastX;
@@ -305,19 +345,19 @@ export function drawTheCube() {
             // Rotate the cube when no modifier key is pressed
             cube.yaw += dx * yawSpeed;
             cube.pitch += dy * pitchSpeed;
-            cube.applyRotation();
+            cube.updateTransform();
         }
         
         world.render();
-    };
+    });
 
     // wheel to zoom (scale screen)
-    canvas.onwheel = (e) => {
+    canvas.addEventListener('wheel', e => {
         e.preventDefault();
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
         screen.zoom = Math.max(0.2, Math.min(5, screen.zoom * factor));
         world.render();
-    };
+    }, { passive: false });
     
     // Display a simple message on the canvas to show controls
     // Removed this line as it's now handled in WorldSpace.render
