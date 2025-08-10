@@ -1,27 +1,61 @@
 /// <reference path="../../../types.d.ts" />
 import {Edge, Vertex3D} from '../../../types';
 
+
+export class CameraEye {
+    /** Eye position in world space (fixed for now) */
+    position: Vertex3D = { x: 0, y: 0, z: 0 };
+
+    /** Vertical field of view in radians */
+    fovY = (60 * Math.PI) / 180;
+
+    /**
+     * Projects a 3D point in world space to 2D screen space
+     * Assumes camera at (0,0,0) looking toward +Z, no rotation yet.
+     */
+    projectToScreen(p: Vertex3D): { x: number; y: number } {
+        // translate point into camera space (position fixed at origin)
+        const cx = p.x - this.position.x;
+        const cy = p.y - this.position.y;
+        const cz = p.z - this.position.z;
+
+        const t = Math.tan(this.fovY / 2);
+
+        return {
+            x: cx / (cz * t),
+            y: cy / (cz * t)
+        };
+    }
+}
+
+
+
 export class WorldSpace {
     private figures: Figure3D[] = [];
-    
+    private camera: CameraEye;
+
+    constructor(camera: CameraEye) {
+        this.camera = camera;
+    }
+
+/* <<<<<<<<<<<<<<  ✨ Windsurf Command ⭐ >>>>>>>>>>>>>>>> */
     /**
-     * Renders all figures in the world space
+     * Iterates over all figures in the world space and
+     * asks each of them to draw themselves in the 2D screen space.
+     * The camera object is passed as a parameter to each figure's draw() method.
      */
+/* <<<<<<<<<<  c530253f-743a-4bed-a931-78f903e762b7  >>>>>>>>>>> */
     render(): void {
-        // run draw on every figure
         for (const figure of this.figures) {
-            figure.draw();
+            figure.draw(this.camera);
         }
     }
-    
-    /**
-     * Adds a figure to the world space
-     * @param figure - The 3D figure to add
-     */
+
     addFigure(figure: Figure3D): void {
         this.figures.push(figure);
     }
 }
+
 
 /**
  * Base class for all 3D figures
@@ -54,7 +88,7 @@ export abstract class Figure3D {
      *  As we draw, we would also use the projectToScreen() function
      *   to place vertices correctly to the 2d world.
      */
-    public draw(): void {
+    public draw(camera: CameraEye): void {
         console.log(`Drawing figure with ${this.edges.length} edges...`);
 
         for (const [a, b] of this.edges) {
@@ -63,11 +97,12 @@ export abstract class Figure3D {
                 continue;
             }
 
-            const p1 = this.projectToScreen(this.vertices[a]);
-            const p2 = this.projectToScreen(this.vertices[b]);
+            const p1 = camera.projectToScreen(this.vertices[a]);
+            const p2 = camera.projectToScreen(this.vertices[b]);
 
             console.log(`  Edge [${a},${b}]: (${p1.x},${p1.y}) to (${p2.x},${p2.y})`);
 
+            window.ctx?.beginPath();
             window.ctx?.moveTo(p1.x, p1.y);
             window.ctx?.lineTo(p2.x, p2.y);
             window.ctx?.stroke();
@@ -153,11 +188,14 @@ document.addEventListener('DOMContentLoaded', (): void => {
     const drawCubeBtn = document.getElementById('drawTheCube');
     if (drawCubeBtn) {
         console.log('Cube button found, adding event listener...');
-        
+
         drawCubeBtn.addEventListener('click', () => {
-            const world = new WorldSpace();
+            const camera = new CameraEye(); // defaults to (0,0,0)
+            const world = new WorldSpace(camera);
+
             const cube = new Cube();
             world.addFigure(cube);
+
             world.render();
         });
     } else {
