@@ -36,3 +36,6 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 /dist/
+
+# Auto-generated files
+src/build-number.json

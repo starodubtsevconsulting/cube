@@ -19,9 +19,12 @@
             <button id="drawTheCube">Draw the Cube</button>
             <button id="clearCanvas">x Clear Canvas</button>
         </div>
+        <div id="app-version" style="position: absolute; top: 10px; right: 10px; font-size: 14px; background-color: rgba(255,255,255,0.8); padding: 5px 10px; border-radius: 3px; border: 1px solid #ccc;">Loading version...</div>
         <canvas id="drawingCanvas" width="800" height="600"></canvas>
         <div id="instructions" style="position: absolute; bottom: 10px; left: 10px; color: #333; font-family: Arial, sans-serif; font-size: 14px;"></div>
+        <div id="version" style="position: absolute; bottom: 30px; left: 10px; color: #333; font-family: Arial, sans-serif; font-size: 14px;"></div>
     </div>
+
 
     <!-- Initialize canvas context first -->
     <script>
@@ -88,13 +91,34 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Loading scripts...');
             // Load scripts in sequence to ensure proper initialization order
-            loadScript('../dist/models/objects/2d/line.js')
+            loadScript('../dist/version.js')
+                .then(() => loadScript('../dist/models/objects/2d/line.js'))
                 .then(() => loadScript('../dist/models/objects/2d/rectangle.js'))
                 .then(() => loadScript('../dist/models/objects/2d/circle.js'))
                 .then(() => loadScript('../dist/clear.js'))
                 .then(() => loadScript('../dist/models/objects/3d/cube.js'))
                 .then(() => {
                     console.log('All scripts loaded successfully');
+
+                    // Display version using the version module
+                    if (window.appVersion && typeof window.appVersion.toString === 'function') {
+                        console.log(`Running version: ${window.appVersion.toString()}`);
+
+                        // Update version element directly1
+                        const versionElement = document.getElementById('app-version');
+                        if (versionElement) {
+                            versionElement.textContent = `Version: ${window.appVersion.toString()}`;
+                        }
+                    } else {
+                        console.warn('Version module not loaded properly');
+                        // Fallback version display
+                        const versionElement = document.getElementById('app-version');
+                        if (versionElement) {
+                            const now = new Date();
+                            const buildDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+                            versionElement.textContent = `Version: v1.0.0+${buildDate}`;
+                        }
+                    }
 
                     // Re-initialize event listeners to ensure they're attached after script loading
                     setTimeout(() => {
