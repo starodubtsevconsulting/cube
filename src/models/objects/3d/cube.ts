@@ -142,7 +142,28 @@ export abstract class Figure3D {
         return { x: p.x, y: c.y + y*cs - z*sn, z: c.z + y*sn + z*cs };
     }
 
-    /** Apply yaw/pitch to a base mesh, then translate by pos (in world space) */
+    /**
+     * Apply yaw (Y-axis) and pitch (X-axis) rotations to a base mesh,
+     * then translate it into world space by a given position offset.
+     *
+     * Important:
+     * - This transformation is **absolute**, not incremental.
+     *   It always starts from the original `base` vertices (unrotated, untranslated).
+     *   Rotation is applied relative to the given `center` point in model space.
+     * - This avoids cumulative floating-point errors and "drift"
+     *   that can happen if you keep rotating already-rotated vertices.
+     *
+     * Steps:
+     *  1. Rotate the base vertices around the Y axis (`yaw`) relative to `center`.
+     *  2. Rotate the result around the X axis (`pitch`) relative to `center`.
+     *  3. Translate the rotated vertices by `pos` to place them in world space.
+     *
+     * @param base   Array of original (untransformed) vertices.
+     * @param center Model-space pivot point for rotation (e.g., object center).
+     * @param yaw    Rotation around Y axis (in radians).
+     * @param pitch  Rotation around X axis (in radians).
+     * @param pos    World-space position offset to move the object.
+     */
     protected applyTransform(
         base: Vertex3D[],
         center: Vertex3D,
@@ -150,8 +171,21 @@ export abstract class Figure3D {
         pitch: number,
         pos: Vertex3D
     ): void {
-        const rotated = base.map(v => this.rotX(this.rotY(v, center, yaw), center, pitch));
-        this.vertices = rotated.map(v => ({ x: v.x + pos.x, y: v.y + pos.y, z: v.z + pos.z }));
+        // Rotate each vertex: first Y-axis (yaw), then X-axis (pitch)
+        const rotated = base.map(v =>
+            this.rotX( // pitch
+                this.rotY(v, center, yaw), // yaw
+                center,
+                pitch
+            )
+        );
+
+        // Translate into world space by adding `pos` offset
+        this.vertices = rotated.map(v => ({
+            x: v.x + pos.x,
+            y: v.y + pos.y,
+            z: v.z + pos.z
+        }));
     }
 
     public draw(camera: CameraEye, screen: ScreenSpace, aspect: number): void {
