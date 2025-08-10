@@ -180,13 +180,20 @@ export class Cube extends Figure3D {
 
     constructor() {
         super();
-        const s = 120, h = s/2, zMid = 400;
-        this.center = { x: 0, y: 0, z: zMid };
+        const CUBE_EDGE_LENGTH = 120;      // world units per cube edge
+        const CUBE_HALF_EDGE = CUBE_EDGE_LENGTH / 2; // half edge, for centering
+        const CUBE_CENTER_Z = 400;         // depth from camera (Z axis) where cube sits
+        
+        this.center = { x: 0, y: 0, z: CUBE_CENTER_Z };
         this.base = [
-            { x: -h, y: -h, z: zMid - h }, { x:  h, y: -h, z: zMid - h },
-            { x: -h, y:  h, z: zMid - h }, { x:  h, y:  h, z: zMid - h },
-            { x: -h, y: -h, z: zMid + h }, { x:  h, y: -h, z: zMid + h },
-            { x: -h, y:  h, z: zMid + h }, { x:  h, y:  h, z: zMid + h },
+            { x: -CUBE_HALF_EDGE, y: -CUBE_HALF_EDGE, z: CUBE_CENTER_Z - CUBE_HALF_EDGE }, 
+            { x:  CUBE_HALF_EDGE, y: -CUBE_HALF_EDGE, z: CUBE_CENTER_Z - CUBE_HALF_EDGE },
+            { x: -CUBE_HALF_EDGE, y:  CUBE_HALF_EDGE, z: CUBE_CENTER_Z - CUBE_HALF_EDGE }, 
+            { x:  CUBE_HALF_EDGE, y:  CUBE_HALF_EDGE, z: CUBE_CENTER_Z - CUBE_HALF_EDGE },
+            { x: -CUBE_HALF_EDGE, y: -CUBE_HALF_EDGE, z: CUBE_CENTER_Z + CUBE_HALF_EDGE }, 
+            { x:  CUBE_HALF_EDGE, y: -CUBE_HALF_EDGE, z: CUBE_CENTER_Z + CUBE_HALF_EDGE },
+            { x: -CUBE_HALF_EDGE, y:  CUBE_HALF_EDGE, z: CUBE_CENTER_Z + CUBE_HALF_EDGE }, 
+            { x:  CUBE_HALF_EDGE, y:  CUBE_HALF_EDGE, z: CUBE_CENTER_Z + CUBE_HALF_EDGE },
         ];
         this.edges = [
             [0,1], [1,3], [3,2], [2,0],
