@@ -1,204 +1,133 @@
 /// <reference path="../../../types.d.ts" />
-import {Edge, Vertex3D} from '../../../types';
+import { Edge, Vertex3D } from '../../../types';
 
-
+/* ---------- CameraEye.ts ---------- */
 export class CameraEye {
-    /** Eye position in world space (fixed for now) */
-    position: Vertex3D = { x: 0, y: 0, z: 0 };
+  position: Vertex3D = { x: 0, y: 0, z: 0 };
+  fovY = (60 * Math.PI) / 180;
 
-    /** Vertical field of view in radians */
-    fovY = (60 * Math.PI) / 180;
+  /** world → normalized screen ([-1,1], half-height = 1) */
+  projectNorm(p: Vertex3D, aspect: number): { x: number; y: number } | null {
+    const cx = p.x - this.position.x;
+    const cy = p.y - this.position.y;
+    const cz = p.z - this.position.z;
 
-    /**
-     * Projects a 3D point in world space to 2D screen space
-     * Assumes camera at (0,0,0) looking toward +Z, no rotation yet.
-     */
-    projectToScreen(p: Vertex3D): { x: number; y: number } {
-        // translate point into camera space (position fixed at origin)
-        const cx = p.x - this.position.x;
-        const cy = p.y - this.position.y;
-        const cz = p.z - this.position.z;
+    // behind or at camera → skip
+    if (!(cz > 0)) return null;
 
-        const t = Math.tan(this.fovY / 2);
+    const t = Math.tan(this.fovY / 2);
+    const xn = (cx / (cz * t)) / aspect;
+    const yn =  cy / (cz * t);
 
-        return {
-            x: cx / (cz * t),
-            y: cy / (cz * t)
-        };
+    // invalid numbers → skip
+    if (!Number.isFinite(xn) || !Number.isFinite(yn)) return null;
+
+    return { x: xn, y: yn };
+  }
+}
+
+/* ---------- ScreenSpace.ts ---------- */
+export class ScreenSpace {
+    constructor(public width: number, public height: number, public zoom = 1) {}
+    toPixels(n: { x: number; y: number }) {
+        const cx = this.width / 2, cy = this.height / 2;
+        const s = (this.height / 2) * this.zoom;   // <— zoom scales the 1×1 screen
+        return { x: cx + n.x * s, y: cy - n.y * s };
     }
 }
 
+/* helpers */
+function rotateY(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
+  const x = p.x - c.x, z = p.z - c.z;
+  const cos = Math.cos(rad), sin = Math.sin(rad);
+  return { x: c.x + x*cos + z*sin, y: p.y, z: c.z - x*sin + z*cos };
+}
 
+function rotateX(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
+  const y = p.y - c.y, z = p.z - c.z;
+  const cos = Math.cos(rad), sin = Math.sin(rad);
+  return { x: p.x, y: c.y + y*cos - z*sin, z: c.z + y*sin + z*cos };
+}
 
+/* ---------- WorldSpace.ts ---------- */
 export class WorldSpace {
-    private figures: Figure3D[] = [];
-    private camera: CameraEye;
+  private figures: Figure3D[] = [];
+  constructor(private camera: CameraEye, private screen: ScreenSpace) {}
 
-    constructor(camera: CameraEye) {
-        this.camera = camera;
-    }
+  addFigure(f: Figure3D) { this.figures.push(f); }
 
-/* <<<<<<<<<<<<<<  ✨ Windsurf Command ⭐ >>>>>>>>>>>>>>>> */
-    /**
-     * Iterates over all figures in the world space and
-     * asks each of them to draw themselves in the 2D screen space.
-     * The camera object is passed as a parameter to each figure's draw() method.
-     */
-/* <<<<<<<<<<  c530253f-743a-4bed-a931-78f903e762b7  >>>>>>>>>>> */
-    render(): void {
-        for (const figure of this.figures) {
-            figure.draw(this.camera);
-        }
-    }
-
-    addFigure(figure: Figure3D): void {
-        this.figures.push(figure);
-    }
+  render(): void {
+    const aspect = this.screen.width / this.screen.height;
+    const ctx = (window as any).ctx as CanvasRenderingContext2D;
+    ctx.clearRect(0, 0, this.screen.width, this.screen.height);
+    for (const f of this.figures) f.draw(this.camera, this.screen, aspect);
+  }
 }
 
-
-/**
- * Base class for all 3D figures
- */
+/* ---------- Figure3D.ts ---------- */
 export abstract class Figure3D {
-    protected vertices: Vertex3D[] = [];
-    protected edges: Edge[] = [];
+  protected vertices: Vertex3D[] = [];
+  protected edges: Edge[] = [];
 
-    /**
-     * Projects a 3D point to 2D screen coordinates
-     * In fact, that is "the most important function",
-     * as it reflects the reality for us to the way see it on the screen.
-     * @param point - The 3D point in world coordinates
-     * @returns Screen coordinates in pixels
-     */
-    protected projectToScreen(point: Vertex3D): { x: number; y: number } {
-        // Simple orthographic projection by default
-        return {
-            x: point.x,
-            y: point.y
-        };
+  public draw(camera: CameraEye, screen: ScreenSpace, aspect: number): void {
+    for (const [a, b] of this.edges) {
+      if (a >= this.vertices.length || b >= this.vertices.length) continue;
+
+      const n1 = camera.projectNorm(this.vertices[a], aspect);
+      const n2 = camera.projectNorm(this.vertices[b], aspect);
+      if (!n1 || !n2) continue;  // critical: skip bad edges
+
+      const p1 = screen.toPixels(n1);
+      const p2 = screen.toPixels(n2);
+
+      (window as any).ctx?.beginPath();
+      (window as any).ctx?.moveTo(p1.x, p1.y);
+      (window as any).ctx?.lineTo(p2.x, p2.y);
+      (window as any).ctx?.stroke();
     }
-
-    /**
-     * Draws the figure on the canvas
-     * Must be implemented by concrete figure classes
-     * What it would do is actually to draw every edge
-     *  (line by line, literally - "connected dots"
-     *  - since that is how we draw - by lines, by edges)
-     *  As we draw, we would also use the projectToScreen() function
-     *   to place vertices correctly to the 2d world.
-     */
-    public draw(camera: CameraEye): void {
-        console.log(`Drawing figure with ${this.edges.length} edges...`);
-
-        for (const [a, b] of this.edges) {
-            if (a >= this.vertices.length || b >= this.vertices.length) {
-                console.error(`Edge [${a}, ${b}] references non-existent vertices (total vertices: ${this.vertices.length})`);
-                continue;
-            }
-
-            const p1 = camera.projectToScreen(this.vertices[a]);
-            const p2 = camera.projectToScreen(this.vertices[b]);
-
-            console.log(`  Edge [${a},${b}]: (${p1.x},${p1.y}) to (${p2.x},${p2.y})`);
-
-            window.ctx?.beginPath();
-            window.ctx?.moveTo(p1.x, p1.y);
-            window.ctx?.lineTo(p2.x, p2.y);
-            window.ctx?.stroke();
-        }
-    }
-
-    /**
-     * Returns the vertices of the figure
-     * @returns Array of 3D vertices
-     */
-    public getVertices(): Vertex3D[] {
-        return [...this.vertices];
-    }
-
+  }
 }
 
-
+/* ---------- Cube.ts ---------- */
 export class Cube extends Figure3D {
+  constructor() {
+    super();
+    this.vertices = [
+      { x: 0,   y: 0,   z: 100 },
+      { x: 100, y: 0,   z: 100 },
+      { x: 0,   y: 100, z: 100 },
+      { x: 100, y: 100, z: 100 },
+      { x: 0,   y: 0,   z: 200 },
+      { x: 100, y: 0,   z: 200 },
+      { x: 0,   y: 100, z: 200 },
+      { x: 100, y: 100, z: 200 },
+    ];
+    this.edges = [
+      [0,1], [1,3], [3,2], [2,0],
+      [4,5], [5,7], [7,6], [6,4],
+      [0,4], [1,5], [2,6], [3,7]
+    ];
+    
+    const center: Vertex3D = { x: 50, y: 50, z: 150 }; // cube center
+    const yaw   = 20 * Math.PI / 180;  // turn left/right
+    const pitch = -10 * Math.PI / 180; // tilt up/down
 
-
-    constructor() {
-        super();
-        // Initialize cube vertices
-        this.vertices = [
-            // front
-            // bottom
-            { x: 0,   y: 0, z: 100 }, // bottom left
-            { x: 100, y: 0, z: 100 }, // bottom right
-            // top
-            { x: 0,   y: 100, z: 100 }, // top left
-            { x: 100, y: 100, z: 100 }, // top right
-
-            // back
-            // bottom
-            { x: 0,   y: 0, z: 200 }, // bottom left
-            { x: 100, y: 0, z: 200 }, // bottom right
-            // top
-            { x: 0,   y: 100, z: 200 }, // top left
-            { x: 100, y: 100, z: 200 }, // top right
-        ];
-
-        // Defining the lines - the edges, which connect the vertices
-        // so the 0, 1 means that 0's  is connected to 1's vertex
-        // we have total of 12 edges (same as human has 12 limbs),
-        // so not only human is close to banana, but also human is close to the cube).
-        this.edges = [
-            [0,1], [1,3], [3,2], [2,0], // front
-            [4,5], [5,7], [7,6], [6,4], // back
-            [0,4], [1,5], [2,6], [3,7]  // connect front and back
-        ]
-    }
-
-    /**
-     * Calculates the center of the figure
-     * @returns The center point of the figure
-     */
-    public getCenter(): Vertex3D {
-        if (this.vertices.length === 0) {
-            return { x: 0, y: 0, z: 0 };
-        }
-
-        const sum = this.vertices.reduce(
-            (acc, vertex) => ({
-                x: acc.x + vertex.x,
-                y: acc.y + vertex.y,
-                z: acc.z + vertex.z,
-            }),
-            { x: 0, y: 0, z: 0 }
-        );
-
-        return {
-            x: sum.x / this.vertices.length,
-            y: sum.y / this.vertices.length,
-            z: sum.z / this.vertices.length,
-        };
-    }
-
-
+    this.vertices = this.vertices.map(v => rotateX(rotateY(v, center, yaw), center, pitch));
+  }
 }
 
-// Initialize cube drawing when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', (): void => {
-    const drawCubeBtn = document.getElementById('drawTheCube');
-    if (drawCubeBtn) {
-        console.log('Cube button found, adding event listener...');
+/* ---------- bootstrap ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('drawTheCube');
+  if (!btn) return;
 
-        drawCubeBtn.addEventListener('click', () => {
-            const camera = new CameraEye(); // defaults to (0,0,0)
-            const world = new WorldSpace(camera);
+  btn.addEventListener('click', () => {
+    const canvas = (window as any).canvas as HTMLCanvasElement;
+    const screen = new ScreenSpace(canvas.width, canvas.height, 1.5); // 1.5× zoom
+    const camera = new CameraEye(); // (0,0,0)
 
-            const cube = new Cube();
-            world.addFigure(cube);
-
-            world.render();
-        });
-    } else {
-        console.error('Draw Cube button not found');
-    }
+    const world = new WorldSpace(camera, screen);
+    world.addFigure(new Cube());
+    world.render();
+  });
 });
