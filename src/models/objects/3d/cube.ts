@@ -103,18 +103,6 @@ export class ScreenSpace {
 
 }
 
-/* ---------- helpers ---------- */
-function rotY(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
-    const x = p.x - c.x, z = p.z - c.z;
-    const cs = Math.cos(rad), sn = Math.sin(rad);
-    return { x: c.x + x*cs + z*sn, y: p.y, z: c.z - x*sn + z*cs };
-}
-function rotX(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
-    const y = p.y - c.y, z = p.z - c.z;
-    const cs = Math.cos(rad), sn = Math.sin(rad);
-    return { x: p.x, y: c.y + y*cs - z*sn, z: c.z + y*sn + z*cs };
-}
-
 /* ---------- WorldSpace ---------- */
 export class WorldSpace {
     private figures: Figure3D[] = [];
@@ -127,6 +115,11 @@ export class WorldSpace {
         const ctx = (window as any).ctx as CanvasRenderingContext2D;
         ctx.clearRect(0, 0, this.screen.width, this.screen.height);
         for (const f of this.figures) f.draw(this.camera, this.screen, aspect);
+
+        // draw overlay after figures
+        ctx.font = '12px Arial';
+        ctx.fillStyle = 'black';
+        ctx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, this.screen.height - 10);
     }
 }
 
@@ -134,6 +127,33 @@ export class WorldSpace {
 export abstract class Figure3D {
     protected vertices: Vertex3D[] = [];
     protected edges: Edge[] = [];
+
+    /** Y-rotation of a single point around center */
+    protected rotY(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
+        const x = p.x - c.x, z = p.z - c.z;
+        const cs = Math.cos(rad), sn = Math.sin(rad);
+        return { x: c.x + x*cs + z*sn, y: p.y, z: c.z - x*sn + z*cs };
+    }
+
+    /** X-rotation of a single point around center */
+    protected rotX(p: Vertex3D, c: Vertex3D, rad: number): Vertex3D {
+        const y = p.y - c.y, z = p.z - c.z;
+        const cs = Math.cos(rad), sn = Math.sin(rad);
+        return { x: p.x, y: c.y + y*cs - z*sn, z: c.z + y*sn + z*cs };
+    }
+
+    /** Apply yaw/pitch to a base mesh, then translate by pos (in world space) */
+    protected applyTransform(
+        base: Vertex3D[],
+        center: Vertex3D,
+        yaw: number,
+        pitch: number,
+        pos: Vertex3D
+    ): void {
+        const rotated = base.map(v => this.rotX(this.rotY(v, center, yaw), center, pitch));
+        this.vertices = rotated.map(v => ({ x: v.x + pos.x, y: v.y + pos.y, z: v.z + pos.z }));
+    }
+
     public draw(camera: CameraEye, screen: ScreenSpace, aspect: number): void {
         for (const [a, b] of this.edges) {
             if (a >= this.vertices.length || b >= this.vertices.length) continue;
@@ -153,22 +173,20 @@ export abstract class Figure3D {
 /* ---------- Cube (rotatable and movable) ---------- */
 export class Cube extends Figure3D {
     private base: Vertex3D[];
-    public center: Vertex3D = { x: 50, y: 50, z: 150 };
+    public center: Vertex3D = { x: 0, y: 0, z: 400 };
     public yaw = 0;
     public pitch = 0;
     public position = { x: 0, y: 0, z: 0 }; // Position offset for movement
 
     constructor() {
         super();
+        const s = 120, h = s/2, zMid = 400;
+        this.center = { x: 0, y: 0, z: zMid };
         this.base = [
-            { x: 0,   y: 0,   z: 100 },
-            { x: 100, y: 0,   z: 100 },
-            { x: 0,   y: 100, z: 100 },
-            { x: 100, y: 100, z: 100 },
-            { x: 0,   y: 0,   z: 200 },
-            { x: 100, y: 0,   z: 200 },
-            { x: 0,   y: 100, z: 200 },
-            { x: 100, y: 100, z: 200 },
+            { x: -h, y: -h, z: zMid - h }, { x:  h, y: -h, z: zMid - h },
+            { x: -h, y:  h, z: zMid - h }, { x:  h, y:  h, z: zMid - h },
+            { x: -h, y: -h, z: zMid + h }, { x:  h, y: -h, z: zMid + h },
+            { x: -h, y:  h, z: zMid + h }, { x:  h, y:  h, z: zMid + h },
         ];
         this.edges = [
             [0,1], [1,3], [3,2], [2,0],
@@ -179,15 +197,7 @@ export class Cube extends Figure3D {
     }
 
     applyRotation() {
-        // First apply rotation
-        const rotated = this.base.map(v => rotX(rotY(v, this.center, this.yaw), this.center, this.pitch));
-        
-        // Then apply translation
-        this.vertices = rotated.map(v => ({
-            x: v.x + this.position.x,
-            y: v.y + this.position.y,
-            z: v.z + this.position.z
-        }));
+        this.applyTransform(this.base, this.center, this.yaw, this.pitch, this.position);
     }
     
     // Move the cube by the specified amount
@@ -269,9 +279,10 @@ export function drawTheCube() {
     };
     
     // Display a simple message on the canvas to show controls
-    ctx.font = '12px Arial';
-    ctx.fillStyle = 'black';
-    ctx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, canvas.height - 10);
+    // Removed this line as it's now handled in WorldSpace.render
+    // ctx.font = '12px Arial';
+    // ctx.fillStyle = 'black';
+    // ctx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, canvas.height - 10);
 }
 
 /* ---------- Initialize event listener ---------- */
