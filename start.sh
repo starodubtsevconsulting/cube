@@ -3,6 +3,8 @@
 # Exit on error
 set -e
 
+rm -rf dist
+
 # Stop any running instances first
 ./stop.sh
 
@@ -20,8 +22,19 @@ echo "Starting TypeScript compiler in watch mode..."
 npx tsc --watch --preserveWatchOutput &
 TSC_PID=$!
 
+# Check if port 8080 is already in use and find an available port
+PORT=8080
+while [ $(lsof -i:$PORT -t >/dev/null 2>&1; echo $?) -eq 0 ]; do
+  echo "Port $PORT is already in use, trying next port..."
+  PORT=$((PORT + 1))
+  if [ $PORT -gt 8090 ]; then
+    echo "Error: Could not find an available port between 8080 and 8090."
+    exit 1
+  fi
+done
+
 # Start HTTP server
-echo "Starting HTTP server on http://localhost:8080"
+echo "Starting HTTP server on http://localhost:$PORT"
 echo "Press Ctrl+C to stop"
 
 # Function to clean up on exit
@@ -36,14 +49,14 @@ cleanup() {
 trap cleanup INT TERM
 
 # Start HTTP server in the background
-npx http-server -p 8080 &
+npx http-server -p $PORT &
 SERVER_PID=$!
 
 # Give the server a moment to start
 sleep 2
 
 # Open Chrome with the app URL
-./open-chrome-browser-tabs.sh
+PORT_ARG=$PORT ./open-chrome-browser-tabs.sh
 
 # Wait for the server process
 echo "HTTP server is running. Press Ctrl+C to stop."
