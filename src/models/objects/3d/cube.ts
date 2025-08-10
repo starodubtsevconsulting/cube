@@ -4,6 +4,21 @@ import { Edge, Vertex3D } from '../../../types';
 /* ---------- CameraEye ---------- */
 export class CameraEye {
 
+    /**
+     * Camera position in world space.
+     *
+     * This is the reference point (origin) for all projection math.
+     * In rendering pipelines, we always transform the world so that the
+     * camera is effectively located at (0,0,0) before projecting.
+     *
+     * With this default value, the camera is fixed at the world origin,
+     * facing down the +Z axis, making (0,0,0) the "center of the universe"
+     * for the current view.
+     *
+     * In a game, this is the value we would update when the player or hero
+     * moves, so the camera (eye) follows them and the scene is rendered
+     * from their new position.
+     */
     position: Vertex3D = { x: 0, y: 0, z: 0 };
 
     /**
