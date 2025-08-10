@@ -1,5 +1,5 @@
-/// <reference path="./types.d.ts" />
-import {Edge, Vertex3D} from './types';
+/// <reference path="../../../types.d.ts" />
+import {Edge, Vertex3D} from '../../../types';
 
 /**
  * Base class for all 3D figures
@@ -63,7 +63,7 @@ export abstract class Figure3D {
 }
 
 
-class Cube extends Figure3D {
+export class Cube extends Figure3D {
 
 
     constructor() {

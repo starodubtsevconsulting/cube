@@ -1,9 +1,10 @@
 # 3D → 2D Projection — Domain-Specific Language
 
+* **Camera (Eye)**: Viewpoint at the apex of the viewing volume.
 * **World Space**: 3D coordinate system for scene geometry $(x, y, z)$.
 * **Screen Space**: 2D coordinate system for display $(x, y)$.
+* 
 * **Normalized Screen Space (NDC)**: Screen space normalized to $[-1, +1]$ in both axes with $(0,0)$ at the center.
-* **Camera (Eye)**: Viewpoint at the apex of the viewing volume.
 * **Viewing Frustum**: Pyramid-like volume defining visible space from the camera through the screen.
 * **Near Plane (Screen)**: Plane at distance **N** from the camera where 3D points are projected.
 * **Far Plane**: Distant clipping plane limiting visibility (often ignored in simple demos).
