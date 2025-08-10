@@ -49,7 +49,7 @@ cleanup() {
 trap cleanup INT TERM
 
 # Start HTTP server in the background
-npx http-server -p $PORT &
+npx http-server -p $PORT --cors -c-1 --no-cache &
 SERVER_PID=$!
 
 # Give the server a moment to start
