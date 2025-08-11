@@ -102,9 +102,9 @@ function setupCubeInteraction(
     canvas.addEventListener('wheel', e => {
         e.preventDefault();
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
-        // Apply zoom factor and render
-        // In this refactored version, we don't have screen.zoom yet
-        // We can implement it later if needed
+        // Apply zoom factor to screen
+        screen.zoom *= factor;
+        // Render with updated zoom
         world.render(ctx);
     }, { passive: false });
 }

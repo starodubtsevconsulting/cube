@@ -19,6 +19,9 @@ export class ScreenSpace {
     centerX = this.width / 2;
     /** Y offset of the screen center relative to top-left origin */
     centerY = this.height / 2;
+    
+    /** Zoom factor for scaling the view */
+    zoom = 1.0;
 
     /**
      * Converts a point from normalized device coordinates ([-1,1]) to pixel coordinates.
@@ -28,8 +31,8 @@ export class ScreenSpace {
      */
     toPixels(n: Vertex2D): Vertex2D {
         return {
-            x: this.centerX + n.x * this.centerX,
-            y: this.centerY - n.y * this.centerY,
+            x: this.centerX + n.x * this.centerX * this.zoom,
+            y: this.centerY - n.y * this.centerY * this.zoom,
         };
     }
 }
