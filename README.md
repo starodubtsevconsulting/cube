@@ -61,6 +61,81 @@ src/
 └── canvas.html            # Main entry point
 ```
 
+### Architecture Diagram
+
+```mermaid
+classDiagram
+    class Vertex3D {
+        +number x
+        +number y
+        +number z
+    }
+    
+    class Vertex2D {
+        +number x
+        +number y
+    }
+    
+    class Edge {
+        +number[]
+    }
+    
+    class Figure3D {
+        <<abstract>>
+        +Vertex3D[] vertices
+        +Edge[] edges
+        +rotate(dx, dy)
+        +move(dx, dy)
+        +transform()
+        +project(camera, screen)
+        +draw(ctx)
+    }
+    
+    class Cube {
+        +number size
+        +constructor(size, x, y, z)
+        +initVertices()
+        +initEdges()
+    }
+    
+    class CameraEye {
+        +Vertex3D position
+        +number distance
+        +projectVertex(vertex)
+    }
+    
+    class ScreenSpace {
+        +number width
+        +number height
+        +number zoom
+        +toScreenCoords(x, y)
+    }
+    
+    class World3D {
+        +CameraEye camera
+        +ScreenSpace screen
+        +Figure3D[] figures
+        +addFigure(figure)
+        +render(ctx)
+    }
+    
+    class CubeController {
+        +drawTheCube()
+        +setupCubeInteraction()
+        +initCubeDrawing()
+    }
+
+    Vertex3D -- Figure3D: used by
+    Edge -- Figure3D: used by
+    Figure3D <|-- Cube: extends
+    Figure3D -- World3D: contains
+    CameraEye -- World3D: contains
+    ScreenSpace -- World3D: contains
+    Vertex2D -- ScreenSpace: used by
+    World3D -- CubeController: uses
+    Cube -- CubeController: uses
+```
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -110,6 +185,8 @@ You can also run with a clean build:
 ## Development
 
 The project uses TypeScript with ES modules for a modern, type-safe development experience.
+
+This project deliberately avoids using any web frameworks or complex build tools. It's built with vanilla JavaScript/TypeScript and uses a simple HTTP server only for development convenience (hot reloading). The focus is on the core concepts of 3D graphics rather than web technologies.
 
 ### Available Scripts
 
