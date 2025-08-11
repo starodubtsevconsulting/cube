@@ -1,5 +1,10 @@
 /// <reference path="../../../types.d.ts" />
-import { Vertex2D } from '../../../types';
+
+// Define Vertex2D interface directly in this file
+interface Vertex2D {
+    x: number;
+    y: number;
+}
 
 /**
  * Screen space handling for converting normalized device coordinates to pixel coordinates

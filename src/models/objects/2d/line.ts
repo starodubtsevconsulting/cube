@@ -1,3 +1,5 @@
+/// <reference path="../../../types.d.ts" />
+
 // Line drawing functionality
 export function drawLine(): void {
     console.log('Drawing line... Beginning of function');

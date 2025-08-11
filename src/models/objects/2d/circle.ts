@@ -1,3 +1,5 @@
+/// <reference path="../../../types.d.ts" />
+
 // Circle drawing functionality
 export function drawCircle(): void {
     console.log('Drawing circle...');

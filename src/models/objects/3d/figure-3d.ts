@@ -1,5 +1,12 @@
 /// <reference path="../../../types.d.ts" />
-import { Vertex3D } from '../../../types';
+
+// Define Vertex3D interface directly in this file
+interface Vertex3D {
+    x: number;
+    y: number;
+    z: number;
+}
+
 import { WorldSpace } from './world-space.js';
 
 /**

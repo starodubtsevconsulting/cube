@@ -1,5 +1,5 @@
 /// <reference path="../../../types.d.ts" />
-import { Vertex3D } from '../../../types';
+
 import { Figure3D } from './figure-3d.js';
 import { CameraEye } from './camera-eye.js';
 import { ScreenSpace } from './screen-space.js';

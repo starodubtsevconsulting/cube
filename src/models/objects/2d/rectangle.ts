@@ -1,3 +1,5 @@
+/// <reference path="../../../types.d.ts" />
+
 // Rectangle drawing functionality
 export function drawRectangle(): void {
     console.log('Drawing rectangle...');

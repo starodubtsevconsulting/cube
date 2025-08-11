@@ -1,3 +1,5 @@
+/// <reference path="./types.d.ts" />
+
 // Canvas clearing functionality
 export function clearCanvas(): void {
     console.log('Clearing canvas...');
