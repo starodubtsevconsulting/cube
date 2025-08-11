@@ -10,12 +10,16 @@ This project is a practical exploration of perspective projection - the mathemat
 
 In reality, whether in movies, video games, or the real world, our eyes always project what we see onto a flat "screen" - the retina. We're actually seeing everything in 2D. The sense of depth comes later, when the brain reconstructs it from visual cues like perspective, shading, and the slight differences between what each eye sees.
 
+![World and Camera Eye](docs/img/world1.png)
+
 This project demonstrates how this works in code through:
 
 1. **Figure3D** - The base representation of 3D objects in world space
 2. **CameraEye** - The observer that performs the projection to the 2D screen plane
 3. **ScreenSpace** - The 2D surface where the 3D world is projected
 4. **World3D** - The container for all objects and the camera
+
+![Cube Naming Conventions](docs/img/cube-namings.png)
 
 ### The Math Behind It
 
@@ -31,6 +35,8 @@ Where:
 - (Xp, Yp) are the projected coordinates on the 2D screen
 - n is the distance to the projection plane (near focus distance)
 - n = 1 / tan(α/2), where α is the field of view angle
+
+![Perspective Projection Math](docs/img/perspective_projection_math.png)
 
 ## Project Structure
 
@@ -115,6 +121,8 @@ The project uses TypeScript with ES modules for a modern, type-safe development 
 ## The Journey
 
 This project began as an exploration to understand how 3D graphics work at a fundamental level. Instead of using existing 3D libraries, everything was built from scratch to truly understand the mathematics and concepts behind perspective projection.
+
+![Early Design Notes](docs/img/napkin-note_final.png)
 
 As described in [A Moveable Feast - Screens of Reality](https://sergiistarodubtsev.substack.com/), the development process was an educational journey:
 
