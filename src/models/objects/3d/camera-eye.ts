@@ -1,11 +1,6 @@
 /// <reference path="../../../types.d.ts" />
 
-// Define Vertex3D interface directly in this file
-interface Vertex3D {
-    x: number;
-    y: number;
-    z: number;
-}
+import { Vertex3D } from '../../primitives/vertex-3d.js';
 
 /**
  * Camera position and projection functionality for 3D rendering

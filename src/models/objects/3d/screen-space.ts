@@ -1,10 +1,6 @@
 /// <reference path="../../../types.d.ts" />
 
-// Define Vertex2D interface directly in this file
-interface Vertex2D {
-    x: number;
-    y: number;
-}
+import { Vertex2D } from '../../primitives/vertex-2d.js';
 
 /**
  * Screen space handling for converting normalized device coordinates to pixel coordinates
