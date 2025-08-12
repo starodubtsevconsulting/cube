@@ -51,10 +51,8 @@ src/
 │   │       ├── camera-eye.ts    # The observer/camera
 │   │       ├── cube.ts          # The 3D cube implementation
 │   │       ├── figure-3d.ts     # Base class for 3D objects
-│   │       ├── render-eye-view.ts # Rendering function decoupled from world
 │   │       ├── screen-space.ts  # 2D projection surface
-│   │       ├── world-3d.ts      # 3D world container
-│   │       └── world-space.ts   # 3D transformation utilities
+│   │       └── world-3d.ts      # 3D world container
 │   └── primitives/         # Basic geometry types
 │       ├── vertex-2d.ts    # 2D point representation
 │       └── vertex-3d.ts    # 3D point representation
@@ -96,12 +94,6 @@ classDiagram
         +rotate(dYaw, dPitch)
     }
     
-    class WorldSpace {
-        <<static>>
-        +rotateX(v, c, angle)
-        +rotateY(v, c, angle)
-    }
-    
     class CameraEye {
         +Vertex3D position
         +number fovY
@@ -134,7 +126,6 @@ classDiagram
     Vertex3D --* Figure3D: contains
     Figure3D <|-- Cube: extends
     Figure3D --* World3D: contains
-    Figure3D --> WorldSpace: uses
     
     ScreenSpace --> World3D: reads figures from
     ScreenSpace --> CameraEye: projects with
