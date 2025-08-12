@@ -36,11 +36,26 @@ export function drawTheCube(): void {
     // Set camera position
     camera.position = { x: 0, y: 0, z: -5 };
     
-    // Create a cube with size 120, centered at z=400
-    const cube = new Cube(120, 0, 0, 400);
+    // Create multiple cubes with different sizes and positions
+    // All cubes have the same y-coordinate to place them on the same "ground" level
+    const cube1 = new Cube(120, 0, 0, 400);       // Original cube: size 120, at z=400
+    const cube2 = new Cube(80, -200, 0, 300);     // Smaller cube to the left
+    const cube3 = new Cube(150, 250, 0, 500);     // Larger cube to the right and farther away
 
-    // Add cube to the world and render
-    world.addFigure(cube);
+    // Access the internal cube structure to set cubes to stand upright
+    // This is needed because all cubes have default rotation (yaw=45°, pitch=-30°)
+    [cube1, cube2, cube3].forEach((cube: any) => {
+        // Cast to any to directly set protected properties
+        cube.yaw = 0;
+        cube.pitch = 0;
+        // Call updateTransform to apply these changes
+        cube.updateTransform();
+    });
+
+    // Add all cubes to the world
+    world.addFigure(cube1);
+    world.addFigure(cube2);
+    world.addFigure(cube3);
     
     // Initialize toolbar controls
     initToolbarControls(screen, camera);
@@ -129,14 +144,16 @@ function setupCubeInteraction(
         lastY = e.clientY;
 
         if (e.shiftKey) {
-            // Move the cube's position in the world
-            const cube = world.getFigures()[0] as Cube; // Assuming the first figure is our cube
+            // Move the first cube's position in the world
+            // In a more advanced implementation, we could implement cube selection
+            const cube = world.getFigures()[0] as Cube; // Manipulate only the first cube
             if (cube && typeof cube.move === 'function') {
                 cube.move(dx * moveSpeed, -dy * moveSpeed);
             }
         } else {
-            // Rotate the cube
-            const cube = world.getFigures()[0] as Cube; // Assuming the first figure is our cube
+            // Rotate the first cube
+            // In a more advanced implementation, we could implement cube selection
+            const cube = world.getFigures()[0] as Cube; // Manipulate only the first cube
             if (cube && typeof cube.rotate === 'function') {
                 cube.rotate(dx * yawSpeed, dy * pitchSpeed);
             }
