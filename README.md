@@ -50,7 +50,6 @@ src/
 │   │   └── 3d/             # 3D implementation
 │   │       ├── camera-eye.ts    # The observer/camera
 │   │       ├── cube.ts          # The 3D cube implementation
-│   │       ├── cube-controller.ts # Interaction handling
 │   │       ├── figure-3d.ts     # Base class for 3D objects
 │   │       ├── screen-space.ts  # 2D projection surface
 │   │       ├── world-3d.ts      # 3D world container
@@ -58,6 +57,8 @@ src/
 │   └── primitives/         # Basic geometry types
 │       ├── vertex-2d.ts    # 2D point representation
 │       └── vertex-3d.ts    # 3D point representation
+├── controllers/
+│   └── cube-controller.ts  # Handles cube interactivity
 └── canvas.html            # Main entry point
 ```
 
