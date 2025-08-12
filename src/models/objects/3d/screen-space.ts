@@ -186,10 +186,10 @@ export class ScreenSpace {
             
             // Draw faces in depth-sorted order
             for (const { faceIndex, face } of facesWithDepth) {
-                const vertices = face.map(idx => projectedVertices[idx]);
+                const vertices = face.map((idx: number) => projectedVertices[idx]);
                 
                 // Skip face if any vertex is not visible
-                if (vertices.some(v => v === null)) continue;
+                if (vertices.some((v: any) => v === null)) continue;
                 
                 // Draw filled face
                 const color = figure.faceColors[faceIndex];
