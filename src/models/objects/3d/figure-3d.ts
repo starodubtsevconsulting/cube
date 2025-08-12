@@ -10,10 +10,30 @@ import { WorldSpace } from './world-space.js';
  * It only manages geometry data and transformations.
  */
 export abstract class Figure3D {
-    /** Vertices after transformation (current state) */
-    vertices: Vertex3D[] = [];
+    /**
+     * Vertices after all transformations have been applied (current state).
+     * These are the actual vertices used for rendering.
+     * This array is updated whenever transformations change.
+     */
+    public vertices: Vertex3D[] = [];
 
-    /** Reference vertices (initial model state) */
+    /**
+     * Reference vertices that maintain the initial model state.
+     * We keep these separate from the transformed vertices for several important reasons:
+     * 
+     * 1. Prevents accumulation of floating-point errors that would occur 
+     *    if we repeatedly transformed already-transformed vertices
+     * 
+     * 2. Allows transformations to always be applied relative to a consistent 
+     *    initial state rather than the previous transformation state
+     * 
+     * 3. Makes it possible to reset to the original state at any time
+     * 
+     * 4. Supports cleaner transformation chaining (applying multiple transformations 
+     *    at once rather than sequentially)
+     * 
+     * 5. Common pattern in 3D graphics - separate model data from transformation state
+     */
     protected base: Vertex3D[] = [];
 
     /** Center point for rotation */
@@ -36,7 +56,17 @@ export abstract class Figure3D {
      */
     protected position: Vertex3D = { x: 0, y: 0, z: 0 };
 
-    /** Edge connectivity (pairs of vertex indices) */
+    /**
+     * Edge connectivity defined as pairs of vertex indices.
+     * For example, [0,1] means "draw a line from vertex 0 to vertex 1".
+     * 
+     * Note: This property was moved from concrete classes (like Cube) to the
+     * Figure3D base class during refactoring to support generic rendering.
+     * Each subclass must define its specific edges in its constructor.
+     * 
+     * This allows the rendering system to draw any figure without
+     * knowing its specific geometry details.
+     */
     public edges: number[][] = [];
 
     /**

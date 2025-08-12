@@ -115,18 +115,14 @@ classDiagram
         +number height
         +number zoom
         +toPixels(normalizedPoint)
+        +renderEyeView(ctx, world, eye)
+        -drawFigure(ctx, figure, eye, aspect)
     }
     
     class World3D {
         -Figure3D[] figures
         +addFigure(figure)
         +getFigures()
-    }
-    
-    class renderEyeView {
-        <<function>>
-        +render(ctx, world, eye, screen)
-        -drawFigure(ctx, figure, eye, screen, aspect)
     }
     
     class CubeController {
@@ -140,10 +136,9 @@ classDiagram
     Figure3D --* World3D: contains
     Figure3D --> WorldSpace: uses
     
-    renderEyeView --> World3D: reads figures from
-    renderEyeView --> CameraEye: projects with
-    renderEyeView --> ScreenSpace: maps with
-    renderEyeView ..> Figure3D: reads geometry from
+    ScreenSpace --> World3D: reads figures from
+    ScreenSpace --> CameraEye: projects with
+    ScreenSpace ..> Figure3D: reads geometry from
     
     CameraEye ..> Vertex3D: projects
     CameraEye --> Vertex2D: produces
@@ -151,7 +146,6 @@ classDiagram
     
     CubeController --> World3D: creates/manages
     CubeController --> Cube: creates/controls
-    CubeController --> renderEyeView: calls
     CubeController --> CameraEye: creates/manages
     CubeController --> ScreenSpace: creates/manages
 ```
@@ -162,14 +156,13 @@ This project follows a clean separation of concerns between data, projection, an
 
 1. **World3D** - Pure data container holding 3D figures without any knowledge of cameras or screens
 2. **CameraEye** - Responsible only for projection calculations (world space to normalized device coordinates)
-3. **ScreenSpace** - Handles mapping from normalized coordinates to actual pixels on screen
+3. **ScreenSpace** - Handles mapping from normalized coordinates to actual pixels on screen AND rendering
 4. **Figure3D** - Contains 3D geometry data with no knowledge of rendering
-5. **renderEyeView** - Decoupled rendering function that observes and draws the world
 
 This strict separation ensures proper modeling of reality:
 - Objects (figures) exist in space but don't know how they're seen
-- The observer (eye/camera) determines how objects appear
-- Rendering is the process of interpreting what the observer sees
+- The eye/camera determines the mathematical projection of 3D to normalized 2D coordinates
+- The screen/viewing plane is where rendering actually happens (following the conceptual model in world1.png)
 
 This separation allows for greater flexibility, such as rendering the same world from multiple camera perspectives, or applying different rendering techniques without changing the world data.
 
