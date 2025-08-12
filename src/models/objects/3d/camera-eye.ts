@@ -60,34 +60,47 @@ export class CameraEye {
      * Projects a vertex from world space to normalized device coordinates.
      * Returns null if the vertex is outside the view frustum.
      * 
+     * Using the projection formula:
+     * Xp = X / (Z * tan(α/2))
+     * Yp = Y / (Z * tan(α/2))
+     * 
+     * Where:
+     * - X, Y, Z are coordinates relative to camera position
+     * - α is the field of view angle
+     * - Xp, Yp are the projected normalized coordinates
+     * 
      * @param vertex The 3D vertex to project
      * @returns Normalized coordinates or null if not visible
      */
     projectNorm(vertex: Vertex3D): { x: number; y: number } | null {
-        // Calculate aspect ratio from screen dimensions
-        const aspect = this.screen.width / this.screen.height;
-        
-        // Translate to camera space (camera at origin)
-        const cx = vertex.x - this.position.x;
-        const cy = vertex.y - this.position.y;
-        const cz = vertex.z - this.position.z;
+        // Calculate camera-space coordinates (camera at origin)
+        // These are the X, Y, Z in our formula
+        const X = vertex.x - this.position.x;
+        const Y = vertex.y - this.position.y;
+        const Z = vertex.z - this.position.z;
         
         // Check if within clipping planes
-        if (cz <= this.near || cz >= this.far) return null;
+        if (Z <= this.near || Z >= this.far) return null;
         
-        // Calculate tangent of half the FOV
-        const t = Math.tan(this.fovY / 2);
+        // Calculate tan(α/2) where α is the field of view
+        const tanHalfFov = Math.tan(this.fovY / 2);
         
-        // Project to normalized device coordinates
-        const xn = (cx / (cz * t)) / aspect;
-        const yn = cy / (cz * t);
+        // Apply the projection formula:
+        // Xp = X / (Z * tan(α/2))
+        // Yp = Y / (Z * tan(α/2))
+        const Xp = X / (Z * tanHalfFov);
+        const Yp = Y / (Z * tanHalfFov);
+        
+        // Adjust X for aspect ratio (not part of the core formula, but needed for rectangular viewports)
+        const aspect = this.screen.width / this.screen.height;
+        const Xp_adjusted = Xp / aspect;
         
         // Check for numerical errors
-        if (!Number.isFinite(xn) || !Number.isFinite(yn)) return null;
+        if (!Number.isFinite(Xp_adjusted) || !Number.isFinite(Yp)) return null;
         
         // Simple frustum clipping - check if point is within normalized range
-        if (xn < -1 || xn > 1 || yn < -1 || yn > 1) return null;
+        if (Xp_adjusted < -1 || Xp_adjusted > 1 || Yp < -1 || Yp > 1) return null;
         
-        return { x: xn, y: yn };
+        return { x: Xp_adjusted, y: Yp };
     }
 }
