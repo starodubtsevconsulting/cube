@@ -4,74 +4,73 @@ import { Vertex3D } from '../../primitives/vertex-3d.js';
 
 /**
  * Camera position and projection functionality for 3D rendering
+ * 
+ * DIFFERENCE BETWEEN CameraEye AND renderEyeView:
+ * 
+ * - CameraEye is a CLASS representing the "eye" or camera itself: its position in space,
+ *   field of view, and the math for projecting 3D points to 2D. It handles the 
+ *   transformation from world coordinates to normalized coordinates.
+ * 
+ * - renderEyeView is a FUNCTION that uses a CameraEye instance to render
+ *   a complete World3D. This separation allows:
+ *   1. Using the same camera to view multiple worlds
+ *   2. Using multiple cameras to view the same world
+ *   3. Decoupling camera projection from actual rendering logic
  */
 export class CameraEye {
     /**
      * Camera position in world space.
-     *
-     * This is the reference point (origin) for all projection math.
-     * In rendering pipelines, we always transform the world so that the
-     * camera is effectively located at (0,0,0) before projecting.
-     *
-     * With this default value, the camera is fixed at the world origin,
-     * facing down the +Z axis, making (0,0,0) the "center of the universe"
-     * for the current view.
-     *
-     * In a game, this is the value we would update when the player or hero
-     * moves, so the camera (eye) follows them and the scene is rendered
-     * from their new position.
      */
     position: Vertex3D = { x: 0, y: 0, z: 0 };
 
     /**
-     * Setting the vertical field of view 𝛼 α to 60° (converted to radians).
-     * fovY = 60° is a common camera/game FOV (on 16:9 it's ≈ 90° horizontal).
-     * 60° is a sane default. It feels natural on a 16:9 screen (≈90° horizontal), with low distortion and no "tunnel vision."
-     * Human eye: 120-200° (for the record)
-     * Bigger FOV ⇒ "zoom out."
+     * Vertical field of view in radians.
+     * 60° is a common camera/game FOV (on 16:9 it's ≈ 90° horizontal).
      */
-    fovY = (60 * Math.PI) / 180;
+    fovY: number = (60 * Math.PI) / 180;
+    
+    /**
+     * Near clipping plane distance.
+     * Objects closer than this won't be rendered.
+     */
+    near: number = 0.1;
+    
+    /**
+     * Far clipping plane distance.
+     * Objects further than this won't be rendered.
+     */
+    far: number = 1e6;
 
     /**
-     * Projects a 3D world-space point into 2D normalized screen coordinates.
-     *
-     * This is the **core perspective projection math** step:
-     *   - Input: world-space point (p) and the current viewport aspect ratio.
-     *   - Output: normalized coordinates (xn, yn) where:
-     *       (0,0) = screen center
-     *       ±1 on Y = top/bottom edges of the virtual "1×1" screen
-     *       ±1 on X = left/right edges (after aspect ratio correction)
-     *
-     * Steps:
-     *   1. Translate the point so the camera position becomes the origin.
-     *   2. Ignore points with z <= 0 (behind or at the camera).
-     *   3. Apply perspective division:
-     *        - Scale X and Y by distance from camera (cz) and by focal length factor.
-     *        - Focal length factor is derived from vertical field of view:
-     *            t = tan(fovY / 2)
-     *        - Horizontal coordinate is divided by aspect ratio to keep proportions.
-     *   4. Return normalized coordinates.
-     *
-     * These normalized coordinates are later mapped to pixel space
-     * by ScreenSpace.toPixels().
-     *
-     * @param p 3D point in world space
-     * @param aspect viewport aspect ratio (width / height)
-     * @returns normalized 2D coordinates or null if point is behind camera
+     * Projects a vertex from world space to normalized device coordinates.
+     * Returns null if the vertex is outside the view frustum.
+     * 
+     * @param vertex The 3D vertex to project
+     * @param aspect The aspect ratio (width/height) of the viewport
+     * @returns Normalized coordinates or null if not visible
      */
-    projectNorm(p: Vertex3D, aspect: number): { x: number; y: number } | null {
-        const cx = p.x - this.position.x;
-        const cy = p.y - this.position.y;
-        const cz = p.z - this.position.z;
-
-        // Behind or at the camera → no projection
-        if (!(cz > 0)) return null;
-
-        const t = Math.tan(this.fovY / 2); // focal length factor
-        const xn = (cx / (cz * t)) / aspect; // normalized X
-        const yn =  cy / (cz * t);           // normalized Y
-
+    projectNorm(vertex: Vertex3D, aspect: number): { x: number; y: number } | null {
+        // Translate to camera space (camera at origin)
+        const cx = vertex.x - this.position.x;
+        const cy = vertex.y - this.position.y;
+        const cz = vertex.z - this.position.z;
+        
+        // Check if within clipping planes
+        if (cz <= this.near || cz >= this.far) return null;
+        
+        // Calculate tangent of half the FOV
+        const t = Math.tan(this.fovY / 2);
+        
+        // Project to normalized device coordinates
+        const xn = (cx / (cz * t)) / aspect;
+        const yn = cy / (cz * t);
+        
+        // Check for numerical errors
         if (!Number.isFinite(xn) || !Number.isFinite(yn)) return null;
+        
+        // Simple frustum clipping - check if point is within normalized range
+        if (xn < -1 || xn > 1 || yn < -1 || yn > 1) return null;
+        
         return { x: xn, y: yn };
     }
 }

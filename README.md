@@ -51,6 +51,7 @@ src/
 │   │       ├── camera-eye.ts    # The observer/camera
 │   │       ├── cube.ts          # The 3D cube implementation
 │   │       ├── figure-3d.ts     # Base class for 3D objects
+│   │       ├── render-eye-view.ts # Rendering function decoupled from world
 │   │       ├── screen-space.ts  # 2D projection surface
 │   │       ├── world-3d.ts      # 3D world container
 │   │       └── world-space.ts   # 3D transformation utilities
@@ -77,65 +78,100 @@ classDiagram
         +number y
     }
     
-    class Edge {
-        +number[]
-    }
-    
     class Figure3D {
         <<abstract>>
         +Vertex3D[] vertices
-        +Edge[] edges
-        +rotate(dx, dy)
-        +move(dx, dy)
-        +transform()
-        +project(camera, screen)
-        +draw(ctx)
+        +Vertex3D[] base
+        +number[][] edges
+        #updateTransform()
+        #applyTransform()
+        #rotX(vertex, center, angle)
+        #rotY(vertex, center, angle)
     }
     
     class Cube {
         +number size
         +constructor(size, x, y, z)
-        +initVertices()
-        +initEdges()
+        +move(dx, dy, dz)
+        +rotate(dYaw, dPitch)
+    }
+    
+    class WorldSpace {
+        <<static>>
+        +rotateX(v, c, angle)
+        +rotateY(v, c, angle)
     }
     
     class CameraEye {
         +Vertex3D position
-        +number distance
-        +projectVertex(vertex)
+        +number fovY
+        +number near
+        +number far
+        +projectNorm(vertex, aspect)
     }
     
     class ScreenSpace {
         +number width
         +number height
         +number zoom
-        +toScreenCoords(x, y)
+        +toPixels(normalizedPoint)
     }
     
     class World3D {
-        +CameraEye camera
-        +ScreenSpace screen
-        +Figure3D[] figures
+        -Figure3D[] figures
         +addFigure(figure)
-        +render(ctx)
+        +getFigures()
+    }
+    
+    class renderEyeView {
+        <<function>>
+        +render(ctx, world, eye, screen)
+        -drawFigure(ctx, figure, eye, screen, aspect)
     }
     
     class CubeController {
         +drawTheCube()
-        +setupCubeInteraction()
+        -setupCubeInteraction()
         +initCubeDrawing()
     }
 
-    Vertex3D -- Figure3D: used by
-    Edge -- Figure3D: used by
+    Vertex3D --* Figure3D: contains
     Figure3D <|-- Cube: extends
-    Figure3D -- World3D: contains
-    CameraEye -- World3D: contains
-    ScreenSpace -- World3D: contains
-    Vertex2D -- ScreenSpace: used by
-    World3D -- CubeController: uses
-    Cube -- CubeController: uses
+    Figure3D --* World3D: contains
+    Figure3D --> WorldSpace: uses
+    
+    renderEyeView --> World3D: reads figures from
+    renderEyeView --> CameraEye: projects with
+    renderEyeView --> ScreenSpace: maps with
+    renderEyeView ..> Figure3D: reads geometry from
+    
+    CameraEye ..> Vertex3D: projects
+    CameraEye --> Vertex2D: produces
+    ScreenSpace --> Vertex2D: maps to pixels
+    
+    CubeController --> World3D: creates/manages
+    CubeController --> Cube: creates/controls
+    CubeController --> renderEyeView: calls
+    CubeController --> CameraEye: creates/manages
+    CubeController --> ScreenSpace: creates/manages
 ```
+
+### Decoupled Architecture Design
+
+This project follows a clean separation of concerns between data, projection, and rendering:
+
+1. **World3D** - Pure data container holding 3D figures without any knowledge of cameras or screens
+2. **CameraEye** - Responsible only for projection calculations (world space to normalized device coordinates)
+3. **ScreenSpace** - Handles mapping from normalized coordinates to actual pixels on screen
+4. **Figure3D** - Contains 3D geometry data with no knowledge of rendering
+5. **renderEyeView** - Decoupled rendering function that observes and draws the world
+
+This strict separation ensures proper modeling of reality:
+- Objects (figures) exist in space but don't know how they're seen
+- The observer (eye/camera) determines how objects appear
+- Rendering is the process of interpreting what the observer sees
+
+This separation allows for greater flexibility, such as rendering the same world from multiple camera perspectives, or applying different rendering techniques without changing the world data.
 
 ## 🚀 Getting Started
 

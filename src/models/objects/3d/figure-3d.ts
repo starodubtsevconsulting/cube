@@ -5,6 +5,9 @@ import { WorldSpace } from './world-space.js';
 
 /**
  * Base class for 3D figures
+ * 
+ * Note: This class has no knowledge of rendering or projection.
+ * It only manages geometry data and transformations.
  */
 export abstract class Figure3D {
     /** Vertices after transformation (current state) */
@@ -32,6 +35,9 @@ export abstract class Figure3D {
      * Current position in 3D space.
      */
     protected position: Vertex3D = { x: 0, y: 0, z: 0 };
+
+    /** Edge connectivity (pairs of vertex indices) */
+    public edges: number[][] = [];
 
     /**
      * Updates the transformed vertices based on current rotation and position
@@ -85,13 +91,4 @@ export abstract class Figure3D {
     protected rotX(v: Vertex3D, c: Vertex3D, angle: number): Vertex3D {
         return WorldSpace.rotateX(v, c, angle);
     }
-
-    /**
-     * Draws the figure on a 2D canvas context
-     */
-    abstract draw(
-        ctx: CanvasRenderingContext2D,
-        camera: any,
-        screen: any
-    ): void;
 }

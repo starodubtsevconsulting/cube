@@ -3,6 +3,7 @@ import { Cube } from '../models/objects/3d/cube.js';
 import { CameraEye } from '../models/objects/3d/camera-eye.js';
 import { ScreenSpace } from '../models/objects/3d/screen-space.js';
 import { World3D } from '../models/objects/3d/world-3d.js';
+import { renderEyeView } from '../models/objects/3d/render-eye-view.js';
 
 /**
  * Main function to draw and initialize the interactive 3D cube
@@ -29,19 +30,19 @@ export function drawTheCube(): void {
     screen.height = canvas.height;
 
     const camera = new CameraEye();
-    const world = new World3D(camera, screen);
+    const world = new World3D();
 
     // Create a cube with size 120, centered at z=400
     const cube = new Cube(120, 0, 0, 400);
 
     // Add cube to the world and render
     world.addFigure(cube);
-    world.render(ctx);
+    renderEyeView(ctx, world, camera, screen);
 
     console.log('Cube drawn and ready for interaction');
 
     // Set up event handling for interaction
-    setupCubeInteraction(canvas, cube, ctx, world, screen);
+    setupCubeInteraction(canvas, cube, ctx, world, camera, screen);
 }
 
 /**
@@ -52,6 +53,7 @@ function setupCubeInteraction(
     cube: Cube,
     ctx: CanvasRenderingContext2D,
     world: World3D,
+    camera: CameraEye,
     screen: ScreenSpace
 ): void {
     // Interaction variables
@@ -95,7 +97,7 @@ function setupCubeInteraction(
         }
 
         // Render the updated scene
-        world.render(ctx);
+        renderEyeView(ctx, world, camera, screen);
     });
 
     // Mouse wheel for zoom
@@ -105,7 +107,7 @@ function setupCubeInteraction(
         // Apply zoom factor to screen
         screen.zoom *= factor;
         // Render with updated zoom
-        world.render(ctx);
+        renderEyeView(ctx, world, camera, screen);
     }, { passive: false });
 }
 
