@@ -214,7 +214,6 @@ This project deliberately avoids using any web frameworks or complex build tools
 - `./start.sh` - Start the project (recommended way)
 - `./stop.sh` - Stop all running services
 - `npm run build` - Compile TypeScript to JavaScript
-- `npm run watch` - Watch for file changes and recompile TypeScript files
 
 ## The Journey
 

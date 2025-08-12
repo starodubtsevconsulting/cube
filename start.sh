@@ -72,16 +72,16 @@ SERVER_PID=$!
 sleep 2
 
 # Ask if user wants to open browser automatically (default yes)
-read -p "$(echo -e ${GREEN}Open browser automatically? [Y/n]: ${NC})" choice
-choice=${choice:-Y}
+#read -p "$(echo -e ${GREEN}Open browser automatically? [Y/n]: ${NC})" choice
+#choice=${choice:-Y}
 
-if [[ $choice =~ ^[Yy]$ ]]; then
+#if [[ $choice =~ ^[Yy]$ ]]; then
     # Open browser with the app URL
     PORT_ARG=$PORT ./open-chrome-browser-tabs.sh
     echo -e "${GREEN}Browser opened with the application.${NC}"
-else
-    echo -e "${GREEN}You can access the application at: http://localhost:$PORT/src/canvas.html${NC}"
-fi
+#else
+#    echo -e "${GREEN}You can access the application at: http://localhost:$PORT/src/canvas.html${NC}"
+#fi
 
 # Show instructions for interaction
 echo -e "\n${BLUE}==== Cube Interaction Controls ====${NC}"
