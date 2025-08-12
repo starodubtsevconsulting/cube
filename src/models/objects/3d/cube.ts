@@ -102,12 +102,9 @@ export class Cube extends Figure3D {
         camera: CameraEye,
         screen: ScreenSpace
     ): void {
-        // Calculate aspect ratio
-        const aspect = screen.width / screen.height;
-        
         // Project 3D points to 2D screen space
         const points2D = this.vertices.map(v => {
-            const p = camera.projectNorm(v, aspect);
+            const p = camera.projectNorm(v);
             return p ? screen.toPixels(p) : null;
         });
         

@@ -19,15 +19,32 @@ export class ScreenSpace {
     /** Current zoom level */
     zoom: number = 1.0;
     
+    /** Reference to the 3D world to be rendered */
+    private world: World3D;
+    
+    /** Canvas rendering context for drawing */
+    private canvasCtx: CanvasRenderingContext2D;
+    
     /**
      * Creates a new screen space converter
      * 
-     * @param width Canvas width in pixels
-     * @param height Canvas height in pixels
+     * @param canvasCtx Canvas rendering context
+     * @param world Reference to a 3D world
      */
-    constructor(width: number, height: number) {
-        this.width = width;
-        this.height = height;
+    constructor(canvasCtx: CanvasRenderingContext2D, world: World3D) {
+        this.canvasCtx = canvasCtx;
+        this.width = canvasCtx.canvas.width;
+        this.height = canvasCtx.canvas.height;
+        this.world = world;
+    }
+    
+    /**
+     * Sets a new 3D world reference for this screen
+     * 
+     * @param world The 3D world to render on this screen
+     */
+    setWorld(world: World3D): void {
+        this.world = world;
     }
     
     /**
@@ -48,16 +65,12 @@ export class ScreenSpace {
         const y = -normalizedPoint.y * centerY; // -center to +center range (inverted y)
         
         // Apply zoom around the center point
-        const zoomedX = x * this.zoom;
-        const zoomedY = y * this.zoom;
+        const scaledX = centerX + (x * this.zoom);
+        const scaledY = centerY + (y * this.zoom);
         
-        // Translate back to top-left origin coordinate system
-        return {
-            x: centerX + zoomedX,
-            y: centerY + zoomedY
-        };
+        return { x: scaledX, y: scaledY };
     }
-
+    
     /**
      * Renders the world from a specific camera eye view onto this screen space
      * 
@@ -65,32 +78,54 @@ export class ScreenSpace {
      * on the viewing plane (screen) where the 3D world is projected to 2D.
      * The eye provides the projection math, but the screen is where the image forms.
      * 
-     * @param ctx Canvas rendering context to draw on
-     * @param world The 3D world containing figures to render
      * @param eye Camera/eye for perspective projection
      */
-    renderEyeView(
-        ctx: CanvasRenderingContext2D,
-        world: World3D,
-        eye: CameraEye
-    ): void {
+    renderEyeView(eye: CameraEye): void {
         // Clear the canvas
-        ctx.clearRect(0, 0, this.width, this.height);
+        this.canvasCtx.clearRect(0, 0, this.width, this.height);
         
         // Calculate aspect ratio once
         const aspect = this.width / this.height;
         
         // Draw each figure in the world
-        for (const figure of world.getFigures()) {
-            this.drawFigure(ctx, figure, eye, aspect);
+        for (const figure of this.world.getFigures()) {
+            this.drawFigure(this.canvasCtx, figure, eye, aspect);
         }
         
         // Draw UI overlay text
-        ctx.font = '12px Arial';
-        ctx.fillStyle = 'black';
-        ctx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, this.height - 10);
+        this.canvasCtx.font = '12px Arial';
+        this.canvasCtx.fillStyle = 'black';
+        this.canvasCtx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, this.height - 10);
     }
-
+    
+    /**
+     * Renders the world from a specific camera eye view onto this screen space
+     * (Legacy method for backward compatibility)
+     * 
+     * @param ctx Canvas rendering context to draw on
+     * @param world The 3D world containing figures to render
+     * @param eye Camera/eye for perspective projection
+     * @deprecated Use setWorld() and renderEyeView(ctx, eye) instead
+     */
+    renderEyeViewWithWorld(
+        ctx: CanvasRenderingContext2D,
+        world: World3D,
+        eye: CameraEye
+    ): void {
+        // Set the world reference for future calls
+        this.world = world;
+        
+        // Use the provided context for this render call
+        const originalCtx = this.canvasCtx;
+        this.canvasCtx = ctx;
+        
+        // Delegate to the simplified method
+        this.renderEyeView(eye);
+        
+        // Restore the original context
+        this.canvasCtx = originalCtx;
+    }
+    
     /**
      * Draws a single 3D figure from the perspective of a camera onto this screen space
      * 
@@ -119,8 +154,8 @@ export class ScreenSpace {
             const v2 = figure.vertices[b];
             
             // Project vertices to normalized device coordinates
-            const n1 = eye.projectNorm(v1, aspect);
-            const n2 = eye.projectNorm(v2, aspect);
+            const n1 = eye.projectNorm(v1);
+            const n2 = eye.projectNorm(v2);
             
             // Skip if either vertex is not visible
             if (!n1 || !n2) continue;
@@ -140,7 +175,7 @@ export class ScreenSpace {
         ctx.fillStyle = 'rgba(255, 0, 128, 0.8)';
         
         for (const vertex of figure.vertices) {
-            const n = eye.projectNorm(vertex, aspect);
+            const n = eye.projectNorm(vertex);
             if (!n) continue; // Skip if not visible
             
             const p = this.toPixels(n);

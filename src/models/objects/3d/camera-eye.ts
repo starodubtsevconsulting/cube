@@ -1,6 +1,7 @@
 /// <reference path="../../../types.d.ts" />
 
 import { Vertex3D } from '../../primitives/vertex-3d.js';
+import { ScreenSpace } from './screen-space.js';
 
 /**
  * Camera position and projection functionality for 3D rendering
@@ -24,6 +25,11 @@ export class CameraEye {
     position: Vertex3D = { x: 0, y: 0, z: 0 };
 
     /**
+     * Screen space that this camera projects onto. (After all, camara can't see anything without a screen)
+     */
+    screen: ScreenSpace;
+
+    /**
      * Vertical field of view in radians.
      * 60° is a common camera/game FOV (on 16:9 it's ≈ 90° horizontal).
      */
@@ -42,14 +48,25 @@ export class CameraEye {
     far: number = 1e6;
 
     /**
+     * Creates a new camera eye with a reference to the screen it projects onto.
+     * 
+     * @param screen The screen space that this camera projects onto
+     */
+    constructor(screen: ScreenSpace) {
+        this.screen = screen;
+    }
+
+    /**
      * Projects a vertex from world space to normalized device coordinates.
      * Returns null if the vertex is outside the view frustum.
      * 
      * @param vertex The 3D vertex to project
-     * @param aspect The aspect ratio (width/height) of the viewport
      * @returns Normalized coordinates or null if not visible
      */
-    projectNorm(vertex: Vertex3D, aspect: number): { x: number; y: number } | null {
+    projectNorm(vertex: Vertex3D): { x: number; y: number } | null {
+        // Calculate aspect ratio from screen dimensions
+        const aspect = this.screen.width / this.screen.height;
+        
         // Translate to camera space (camera at origin)
         const cx = vertex.x - this.position.x;
         const cy = vertex.y - this.position.y;

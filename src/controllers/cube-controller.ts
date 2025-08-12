@@ -17,33 +17,35 @@ export function drawTheCube(): void {
         return;
     }
 
-    const ctx = (window as any).ctx as CanvasRenderingContext2D;
-    if (!ctx) {
+    const canvasCtx = (window as any).ctx as CanvasRenderingContext2D;
+    if (!canvasCtx) {
         console.error('Canvas context not found');
         return;
     }
 
     // Initialize 3D environment
-    // Create a camera for viewing
-    const camera = new CameraEye();
-    
-    // Create screen space for mapping coordinates
-    const screen = new ScreenSpace(canvas.width, canvas.height);
-    
-    // Store references for later
+    // Create world first
     const world = new World3D();
-
+    
+    // Create screen space for mapping coordinates with reference to world and context
+    const screen = new ScreenSpace(canvasCtx, world);
+    
+    // Create a camera for viewing with reference to screen
+    const camera = new CameraEye(screen);
+    
     // Create a cube with size 120, centered at z=400
     const cube = new Cube(120, 0, 0, 400);
 
     // Add cube to the world and render
     world.addFigure(cube);
-    screen.renderEyeView(ctx, world, camera);
+    
+    // Render the scene with the camera
+    screen.renderEyeView(camera);
 
     console.log('Cube drawn and ready for interaction');
 
     // Set up event handling for interaction
-    setupCubeInteraction(canvas, cube, ctx, world, camera, screen);
+    setupCubeInteraction(canvas, cube, canvasCtx, world, camera, screen);
 }
 
 /**
@@ -98,7 +100,7 @@ function setupCubeInteraction(
         }
 
         // Render the updated scene
-        screen.renderEyeView(ctx, world, camera);
+        screen.renderEyeView(camera);
     });
 
     // Mouse wheel for zoom
@@ -108,7 +110,7 @@ function setupCubeInteraction(
         // Apply zoom factor to screen
         screen.zoom *= factor;
         // Render with updated zoom
-        screen.renderEyeView(ctx, world, camera);
+        screen.renderEyeView(camera);
     }, { passive: false });
 }
 
