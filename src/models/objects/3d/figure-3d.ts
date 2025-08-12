@@ -1,7 +1,6 @@
 /// <reference path="../../../types.d.ts" />
 
 import { Vertex3D } from '../../primitives/vertex-3d.js';
-import { WorldSpace } from './world-space.js';
 
 /**
  * Base class for 3D figures
@@ -110,15 +109,57 @@ export abstract class Figure3D {
 
     /**
      * Rotates a vertex around the Y axis
+     * 
+     * @param p Point to rotate
+     * @param c Center of rotation
+     * @param angle Angle in radians
+     * @returns Rotated point
      */
-    protected rotY(v: Vertex3D, c: Vertex3D, angle: number): Vertex3D {
-        return WorldSpace.rotateY(v, c, angle);
+    protected rotY(p: Vertex3D, c: Vertex3D, angle: number): Vertex3D {
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
+
+        // Translate point to origin
+        const tx = p.x - c.x;
+        const tz = p.z - c.z;
+
+        // Rotate point around Y axis
+        const rx = tx * cos - tz * sin;
+        const rz = tx * sin + tz * cos;
+
+        // Translate back
+        return {
+            x: rx + c.x,
+            y: p.y,
+            z: rz + c.z
+        };
     }
 
     /**
      * Rotates a vertex around the X axis
+     * 
+     * @param p Point to rotate
+     * @param c Center of rotation
+     * @param angle Angle in radians
+     * @returns Rotated point
      */
-    protected rotX(v: Vertex3D, c: Vertex3D, angle: number): Vertex3D {
-        return WorldSpace.rotateX(v, c, angle);
+    protected rotX(p: Vertex3D, c: Vertex3D, angle: number): Vertex3D {
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
+
+        // Translate point to origin
+        const ty = p.y - c.y;
+        const tz = p.z - c.z;
+
+        // Rotate point around X axis
+        const ry = ty * cos - tz * sin;
+        const rz = ty * sin + tz * cos;
+
+        // Translate back
+        return {
+            x: p.x,
+            y: ry + c.y,
+            z: rz + c.z
+        };
     }
 }
