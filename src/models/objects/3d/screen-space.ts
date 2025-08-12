@@ -144,30 +144,85 @@ export class ScreenSpace {
         eye: CameraEye,
         aspect: number
     ): void {
+        // Project all vertices first and store them
+        const projectedVertices = figure.vertices.map(vertex => {
+            const proj = eye.projectNorm(vertex);
+            if (!proj) return null;
+            return {
+                projected: proj,
+                pixel: this.toPixels(proj)
+            };
+        });
+        
+        // Draw faces if the figure has them
+        if ('faces' in figure && Array.isArray(figure.faces) && 
+            'faceColors' in figure && Array.isArray(figure.faceColors)) {
+            
+            // Calculate average Z distance for each face for depth sorting
+            const facesWithDepth = figure.faces.map((face, index) => {
+                // Calculate average Z distance of the face vertices
+                let totalDistance = 0;
+                let visibleVertices = 0;
+                
+                for (const vertexIndex of face) {
+                    const projected = projectedVertices[vertexIndex];
+                    if (projected) {
+                        totalDistance += projected.projected.distance;
+                        visibleVertices++;
+                    }
+                }
+                
+                const avgDistance = visibleVertices > 0 ? totalDistance / visibleVertices : Infinity;
+                
+                return {
+                    faceIndex: index,
+                    face: face,
+                    avgDistance: avgDistance
+                };
+            });
+            
+            // Sort faces by distance (back-to-front)
+            facesWithDepth.sort((a, b) => b.avgDistance - a.avgDistance);
+            
+            // Draw faces in depth-sorted order
+            for (const { faceIndex, face } of facesWithDepth) {
+                const vertices = face.map(idx => projectedVertices[idx]);
+                
+                // Skip face if any vertex is not visible
+                if (vertices.some(v => v === null)) continue;
+                
+                // Draw filled face
+                const color = figure.faceColors[faceIndex];
+                ctx.fillStyle = color;
+                
+                ctx.beginPath();
+                ctx.moveTo(vertices[0].pixel.x, vertices[0].pixel.y);
+                
+                for (let i = 1; i < vertices.length; i++) {
+                    ctx.lineTo(vertices[i].pixel.x, vertices[i].pixel.y);
+                }
+                
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+        
         // Default edge style
         ctx.strokeStyle = 'rgba(0, 128, 255, 0.8)';
         ctx.lineWidth = 2;
         
         // Draw each edge of the figure
         for (const [a, b] of figure.edges) {
-            const v1 = figure.vertices[a];
-            const v2 = figure.vertices[b];
-            
-            // Project vertices to normalized device coordinates
-            const n1 = eye.projectNorm(v1);
-            const n2 = eye.projectNorm(v2);
+            const v1 = projectedVertices[a];
+            const v2 = projectedVertices[b];
             
             // Skip if either vertex is not visible
-            if (!n1 || !n2) continue;
-            
-            // Convert normalized coordinates to pixel coordinates
-            const p1 = this.toPixels(n1);
-            const p2 = this.toPixels(n2);
+            if (!v1 || !v2) continue;
             
             // Draw the edge
             ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(v1.pixel.x, v1.pixel.y);
+            ctx.lineTo(v2.pixel.x, v2.pixel.y);
             ctx.stroke();
         }
         
@@ -175,25 +230,21 @@ export class ScreenSpace {
         // to normalize our depth effect
         let minDist = Infinity;
         let maxDist = 0;
-        const visibleVertices = [];
+        const visibleVertices = projectedVertices.filter(v => v !== null);
         
-        for (const vertex of figure.vertices) {
-            const projected = eye.projectNorm(vertex);
-            if (!projected) continue;
-            
-            visibleVertices.push(projected);
-            minDist = Math.min(minDist, projected.distance);
-            maxDist = Math.max(maxDist, projected.distance);
+        for (const v of visibleVertices) {
+            minDist = Math.min(minDist, v.projected.distance);
+            maxDist = Math.max(maxDist, v.projected.distance);
         }
         
         // Ensure we have a reasonable distance range
         const distRange = Math.max(maxDist - minDist, 1);
         
         // Draw vertices as small circles with depth-based coloring
-        for (const projectedVertex of visibleVertices) {
+        for (const vertex of visibleVertices) {
             // Calculate how "in focus" the vertex is based on its distance
             // 1.0 = closest (fully in focus), 0.0 = farthest (out of focus)
-            const focusLevel = 1.0 - ((projectedVertex.distance - minDist) / distRange);
+            const focusLevel = 1.0 - ((vertex.projected.distance - minDist) / distRange);
             
             // Apply color based on focus level - more transparent and less red for distant vertices
             const red = Math.floor(255 * focusLevel);
@@ -203,9 +254,8 @@ export class ScreenSpace {
             ctx.fillStyle = `rgba(${red}, 0, 128, ${opacity})`;
             
             // Draw the vertex
-            const p = this.toPixels(projectedVertex);
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.arc(vertex.pixel.x, vertex.pixel.y, 4, 0, Math.PI * 2);
             ctx.fill();
         }
     }

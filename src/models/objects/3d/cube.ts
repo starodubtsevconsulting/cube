@@ -57,12 +57,38 @@ export class Cube extends Figure3D {
             [0, 4], [1, 5], [2, 6], [3, 7]
         ];
         
+        // Define the faces (counter-clockwise winding)
+        this.faces = [
+            [0, 1, 2, 3],   // Front face
+            [5, 4, 7, 6],   // Back face
+            [1, 5, 6, 2],   // Right face
+            [4, 0, 3, 7],   // Left face
+            [3, 2, 6, 7],   // Top face
+            [0, 4, 5, 1]    // Bottom face
+        ];
+        
+        // Define colors for each face (semi-transparent)
+        this.faceColors = [
+            'rgba(255, 0, 0, 0.5)',    // Front: red
+            'rgba(0, 255, 0, 0.5)',    // Back: green
+            'rgba(0, 0, 255, 0.5)',    // Right: blue
+            'rgba(255, 255, 0, 0.5)',  // Left: yellow
+            'rgba(0, 255, 255, 0.5)',  // Top: cyan
+            'rgba(255, 0, 255, 0.5)'   // Bottom: magenta
+        ];
+        
         // Apply initial transformation
         this.updateTransform();
     }
 
     /** Edge connectivity (pairs of vertex indices) */
     edges: number[][] = [];
+
+    /** Face definitions as arrays of vertex indices (counter-clockwise winding) */
+    faces: number[][] = [];
+
+    /** Colors for each face */
+    faceColors: string[] = [];
 
     /**
      * Moves the cube by the given deltas
