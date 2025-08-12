@@ -171,14 +171,39 @@ export class ScreenSpace {
             ctx.stroke();
         }
         
-        // Draw vertices as small circles
-        ctx.fillStyle = 'rgba(255, 0, 128, 0.8)';
+        // Calculate distance range for all visible vertices
+        // to normalize our depth effect
+        let minDist = Infinity;
+        let maxDist = 0;
+        const visibleVertices = [];
         
         for (const vertex of figure.vertices) {
-            const n = eye.projectNorm(vertex);
-            if (!n) continue; // Skip if not visible
+            const projected = eye.projectNorm(vertex);
+            if (!projected) continue;
             
-            const p = this.toPixels(n);
+            visibleVertices.push(projected);
+            minDist = Math.min(minDist, projected.distance);
+            maxDist = Math.max(maxDist, projected.distance);
+        }
+        
+        // Ensure we have a reasonable distance range
+        const distRange = Math.max(maxDist - minDist, 1);
+        
+        // Draw vertices as small circles with depth-based coloring
+        for (const projectedVertex of visibleVertices) {
+            // Calculate how "in focus" the vertex is based on its distance
+            // 1.0 = closest (fully in focus), 0.0 = farthest (out of focus)
+            const focusLevel = 1.0 - ((projectedVertex.distance - minDist) / distRange);
+            
+            // Apply color based on focus level - more transparent and less red for distant vertices
+            const red = Math.floor(255 * focusLevel);
+            const opacity = 0.3 + (focusLevel * 0.7); // Range from 0.3 to 1.0
+            
+            // Set fill style with distance-based color
+            ctx.fillStyle = `rgba(${red}, 0, 128, ${opacity})`;
+            
+            // Draw the vertex
+            const p = this.toPixels(projectedVertex);
             ctx.beginPath();
             ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
             ctx.fill();

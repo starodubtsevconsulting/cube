@@ -70,9 +70,9 @@ export class CameraEye {
      * - Xp, Yp are the projected normalized coordinates
      * 
      * @param vertex The 3D vertex to project
-     * @returns Normalized coordinates or null if not visible
+     * @returns Normalized coordinates with Z distance or null if not visible
      */
-    projectNorm(vertex: Vertex3D): { x: number; y: number } | null {
+    projectNorm(vertex: Vertex3D): { x: number; y: number; distance: number } | null {
         // Calculate camera-space coordinates (camera at origin)
         // These are the X, Y, Z in our formula
         const X = vertex.x - this.position.x;
@@ -101,6 +101,6 @@ export class CameraEye {
         // Simple frustum clipping - check if point is within normalized range
         if (Xp_adjusted < -1 || Xp_adjusted > 1 || Yp < -1 || Yp > 1) return null;
         
-        return { x: Xp_adjusted, y: Yp };
+        return { x: Xp_adjusted, y: Yp, distance: Z };
     }
 }
