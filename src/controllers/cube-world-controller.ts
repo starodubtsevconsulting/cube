@@ -66,6 +66,13 @@ function setupCubeInteraction(
     const yawSpeed = 0.01;
     const pitchSpeed = 0.01;
     const moveSpeed = 1;
+    
+    // Keyboard control variables
+    const cameraRotationSpeed = 0.05; // radians per key press
+    const cameraMovementSpeed = 10;   // units per key press
+    
+    // Track which keys are currently pressed
+    const keysPressed = new Set<string>();
 
     // Pointer events for rotation/movement
     canvas.addEventListener('pointerdown', e => {
@@ -112,6 +119,39 @@ function setupCubeInteraction(
         // Render with updated zoom
         screen.renderEyeView(camera);
     }, { passive: false });
+    
+    // Keyboard events for camera movement
+    document.addEventListener('keydown', (e) => {
+        keysPressed.add(e.key);
+        
+        // Process camera movements based on arrow keys
+        switch (e.key) {
+            case 'ArrowUp':
+                // Move camera forward
+                camera.moveForward(cameraMovementSpeed);
+                screen.renderEyeView(camera);
+                break;
+            case 'ArrowDown':
+                // Move camera backward
+                camera.moveForward(-cameraMovementSpeed);
+                screen.renderEyeView(camera);
+                break;
+            case 'ArrowLeft':
+                // Rotate camera left
+                camera.rotateYaw(cameraRotationSpeed);
+                screen.renderEyeView(camera);
+                break;
+            case 'ArrowRight':
+                // Rotate camera right
+                camera.rotateYaw(-cameraRotationSpeed);
+                screen.renderEyeView(camera);
+                break;
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        keysPressed.delete(e.key);
+    });
 }
 
 /**

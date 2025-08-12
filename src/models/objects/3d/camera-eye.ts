@@ -25,6 +25,13 @@ export class CameraEye {
     position: Vertex3D = { x: 0, y: 0, z: 0 };
 
     /**
+     * Camera orientation in radians (yaw and pitch).
+     * - yaw: rotation around Y axis (left/right)
+     * - pitch: rotation around X axis (up/down)
+     */
+    orientation: { yaw: number; pitch: number } = { yaw: 0, pitch: 0 };
+
+    /**
      * Screen space that this camera projects onto. (After all, camara can't see anything without a screen)
      */
     screen: ScreenSpace;
@@ -78,9 +85,18 @@ export class CameraEye {
         const X = vertex.x - this.position.x;
         const Y = vertex.y - this.position.y;
         const Z = vertex.z - this.position.z;
+
+        // Apply camera orientation (yaw rotation around Y axis)
+        // This transforms world coordinates to camera-relative coordinates
+        const cosYaw = Math.cos(this.orientation.yaw);
+        const sinYaw = Math.sin(this.orientation.yaw);
+        
+        // Rotate the point around the Y axis (yaw)
+        const rotatedX = X * cosYaw + Z * sinYaw;
+        const rotatedZ = Z * cosYaw - X * sinYaw;
         
         // Check if within clipping planes
-        if (Z <= this.near || Z >= this.far) return null;
+        if (rotatedZ <= this.near || rotatedZ >= this.far) return null;
         
         // Calculate tan(α/2) where α is the field of view
         const tanHalfFov = Math.tan(this.fovY / 2);
@@ -88,8 +104,8 @@ export class CameraEye {
         // Apply the projection formula:
         // Xp = X / (Z * tan(α/2))
         // Yp = Y / (Z * tan(α/2))
-        const Xp = X / (Z * tanHalfFov);
-        const Yp = Y / (Z * tanHalfFov);
+        const Xp = rotatedX / (rotatedZ * tanHalfFov);
+        const Yp = Y / (rotatedZ * tanHalfFov);
         
         // Adjust X for aspect ratio (not part of the core formula, but needed for rectangular viewports)
         const aspect = this.screen.width / this.screen.height;
@@ -101,6 +117,57 @@ export class CameraEye {
         // Simple frustum clipping - check if point is within normalized range
         if (Xp_adjusted < -1 || Xp_adjusted > 1 || Yp < -1 || Yp > 1) return null;
         
-        return { x: Xp_adjusted, y: Yp, distance: Z };
+        return { x: Xp_adjusted, y: Yp, distance: rotatedZ };
+    }
+
+    /**
+     * Rotates the camera left/right (around Y axis)
+     * @param angleRadians Amount to rotate in radians
+     */
+    rotateYaw(angleRadians: number): void {
+        this.orientation.yaw += angleRadians;
+        // Normalize between 0 and 2π
+        this.orientation.yaw = this.orientation.yaw % (2 * Math.PI);
+    }
+
+    /**
+     * Rotates the camera up/down (around X axis)
+     * @param angleRadians Amount to rotate in radians
+     */
+    rotatePitch(angleRadians: number): void {
+        this.orientation.pitch += angleRadians;
+        // Clamp to avoid over-rotation (looking upside down)
+        const maxPitch = Math.PI / 2 - 0.01; // Just slightly less than 90°
+        this.orientation.pitch = Math.max(Math.min(this.orientation.pitch, maxPitch), -maxPitch);
+    }
+
+    /**
+     * Moves camera forward in the direction it's facing
+     * @param distance Distance to move forward
+     */
+    moveForward(distance: number): void {
+        // Calculate direction vector based on yaw
+        // Need to negate the angle for consistency with the projection matrix
+        const dirX = Math.sin(-this.orientation.yaw);
+        const dirZ = Math.cos(-this.orientation.yaw);
+        
+        // Update position
+        this.position.x += dirX * distance;
+        this.position.z += dirZ * distance;
+    }
+
+    /**
+     * Moves camera left/right perpendicular to the direction it's facing
+     * @param distance Distance to move (positive = right, negative = left)
+     */
+    moveSideways(distance: number): void {
+        // Calculate direction vector based on yaw + 90 degrees
+        // Need to negate the angle for consistency with the projection matrix
+        const dirX = Math.sin(-(this.orientation.yaw + Math.PI / 2));
+        const dirZ = Math.cos(-(this.orientation.yaw + Math.PI / 2));
+        
+        // Update position
+        this.position.x += dirX * distance;
+        this.position.z += dirZ * distance;
     }
 }

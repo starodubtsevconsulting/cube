@@ -57,7 +57,7 @@ src/
 │       ├── vertex-2d.ts    # 2D point representation
 │       └── vertex-3d.ts    # 3D point representation
 ├── controllers/
-│   └── cube-controller.ts  # Handles cube interactivity
+│   └── cube-world-controller.ts  # Handles cube interactivity
 └── canvas.html            # Main entry point
 ```
 
