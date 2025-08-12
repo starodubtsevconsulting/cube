@@ -33,32 +33,62 @@ export function drawTheCube(): void {
     // Create a camera for viewing with reference to screen
     const camera = new CameraEye(screen);
     
+    // Set camera position
+    camera.position = { x: 0, y: 0, z: -5 };
+    
     // Create a cube with size 120, centered at z=400
     const cube = new Cube(120, 0, 0, 400);
 
     // Add cube to the world and render
     world.addFigure(cube);
     
+    // Initialize toolbar controls
+    initToolbarControls(screen, camera);
+    
+    // Set up event handling for interaction
+    setupCubeInteraction(canvas, world, camera, screen);
+    
     // Render the scene with the camera
     screen.renderEyeView(camera);
 
     console.log('Cube drawn and ready for interaction');
-
-    // Set up event handling for interaction
-    setupCubeInteraction(canvas, cube, canvasCtx, world, camera, screen);
 }
 
 /**
- * Sets up user interaction with the 3D cube
+ * Initialize the toolbar controls
+ * @param screen The ScreenSpace object
+ * @param camera The CameraEye object
+ */
+function initToolbarControls(screen: ScreenSpace, camera: CameraEye) {
+    // Get the toggle legend checkbox
+    const toggleLegendCheckbox = document.getElementById('toggleLegend') as HTMLInputElement;
+    
+    if (toggleLegendCheckbox) {
+        // Set initial state (checkbox is initially checked)
+        screen.setShowLegend(toggleLegendCheckbox.checked);
+        
+        // Add event listener for checkbox changes
+        toggleLegendCheckbox.addEventListener('change', () => {
+            screen.setShowLegend(toggleLegendCheckbox.checked);
+            screen.renderEyeView(camera);
+        });
+    }
+}
+
+/**
+ * Sets up interaction with the cube - rotation, movement, and zoom
+ * 
+ * @param canvas Canvas element for interaction
+ * @param world 3D world containing the cube
+ * @param camera Camera/eye for perspective
+ * @param screen Screen space for rendering
  */
 function setupCubeInteraction(
     canvas: HTMLCanvasElement,
-    cube: Cube,
-    ctx: CanvasRenderingContext2D,
     world: World3D,
     camera: CameraEye,
     screen: ScreenSpace
-): void {
+) {
     // Interaction variables
     let dragging = false;
     let lastX = 0;
@@ -99,11 +129,17 @@ function setupCubeInteraction(
         lastY = e.clientY;
 
         if (e.shiftKey) {
-            // Move the cube when Shift key is pressed
-            cube.move(dx * moveSpeed, -dy * moveSpeed);
+            // Move the cube's position in the world
+            const cube = world.getFigures()[0] as Cube; // Assuming the first figure is our cube
+            if (cube && typeof cube.move === 'function') {
+                cube.move(dx * moveSpeed, -dy * moveSpeed);
+            }
         } else {
-            // Rotate the cube when no modifier key is pressed
-            cube.rotate(dx * yawSpeed, dy * pitchSpeed);
+            // Rotate the cube
+            const cube = world.getFigures()[0] as Cube; // Assuming the first figure is our cube
+            if (cube && typeof cube.rotate === 'function') {
+                cube.rotate(dx * yawSpeed, dy * pitchSpeed);
+            }
         }
 
         // Render the updated scene
@@ -124,33 +160,39 @@ function setupCubeInteraction(
     document.addEventListener('keydown', (e) => {
         keysPressed.add(e.key);
         
+        // Update the screen with the current pressed keys
+        screen.setActiveKeys(keysPressed);
+        
         // Process camera movements based on arrow keys
         switch (e.key) {
             case 'ArrowUp':
                 // Move camera forward
                 camera.moveForward(cameraMovementSpeed);
-                screen.renderEyeView(camera);
                 break;
             case 'ArrowDown':
                 // Move camera backward
                 camera.moveForward(-cameraMovementSpeed);
-                screen.renderEyeView(camera);
                 break;
             case 'ArrowLeft':
                 // Rotate camera left
                 camera.rotateYaw(cameraRotationSpeed);
-                screen.renderEyeView(camera);
                 break;
             case 'ArrowRight':
                 // Rotate camera right
                 camera.rotateYaw(-cameraRotationSpeed);
-                screen.renderEyeView(camera);
                 break;
         }
+        
+        // Always render after any key press
+        screen.renderEyeView(camera);
     });
     
     document.addEventListener('keyup', (e) => {
         keysPressed.delete(e.key);
+        
+        // Update the screen with the current pressed keys
+        screen.setActiveKeys(keysPressed);
+        screen.renderEyeView(camera);
     });
 }
 
@@ -158,6 +200,8 @@ function setupCubeInteraction(
  * Initializes the cube drawing functionality by attaching event listeners
  */
 export function initCubeDrawing(): void {
+    console.log('Init cube drawing...');
+    
     // Add event listener for "Draw the Cube" button
     const drawCubeButton = document.getElementById('drawTheCube');
     if (drawCubeButton) {
@@ -183,7 +227,3 @@ export function initCubeDrawing(): void {
 // Register global functions
 (window as any).initCubeDrawing = initCubeDrawing;
 (window as any).drawTheCube = drawTheCube;
-
-console.log('Cube controller functions registered globally: ', 
-    'window.initCubeDrawing:', typeof (window as any).initCubeDrawing,
-    'window.drawTheCube:', typeof (window as any).drawTheCube);

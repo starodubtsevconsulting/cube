@@ -25,6 +25,12 @@ export class ScreenSpace {
     /** Canvas rendering context for drawing */
     private canvasCtx: CanvasRenderingContext2D;
     
+    /** Currently active keys */
+    private activeKeys: Set<string> = new Set<string>();
+    
+    /** Whether to show legend information */
+    private showLegend: boolean = true;
+    
     /**
      * Creates a new screen space converter
      * 
@@ -45,6 +51,22 @@ export class ScreenSpace {
      */
     setWorld(world: World3D): void {
         this.world = world;
+    }
+    
+    /**
+     * Updates the set of currently active keys
+     * @param keys Set of currently pressed keys
+     */
+    setActiveKeys(keys: Set<string>): void {
+        this.activeKeys = new Set(keys);
+    }
+    
+    /**
+     * Sets whether to show the legend information
+     * @param show True to show legend, false to hide
+     */
+    setShowLegend(show: boolean): void {
+        this.showLegend = show;
     }
     
     /**
@@ -92,10 +114,76 @@ export class ScreenSpace {
             this.drawFigure(this.canvasCtx, figure, eye, aspect);
         }
         
-        // Draw UI overlay text
-        this.canvasCtx.font = '12px Arial';
-        this.canvasCtx.fillStyle = 'black';
-        this.canvasCtx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom', 10, this.height - 10);
+        // Only draw legend information if enabled
+        if (this.showLegend) {
+            // Draw camera position and orientation in the top-left corner
+            this.canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.canvasCtx.fillRect(10, 10, 260, 70);
+            this.canvasCtx.font = '12px monospace';
+            this.canvasCtx.fillStyle = 'white';
+            
+            // Format position coordinates with 2 decimal places
+            const posX = eye.position.x.toFixed(2);
+            const posY = eye.position.y.toFixed(2);
+            const posZ = eye.position.z.toFixed(2);
+            
+            // Convert radians to degrees for display and format with 1 decimal place
+            const yawDegrees = ((eye.orientation.yaw * 180 / Math.PI) % 360).toFixed(1);
+            const pitchDegrees = (eye.orientation.pitch * 180 / Math.PI).toFixed(1);
+            
+            // Display coordinates
+            this.canvasCtx.fillText(`Position: (${posX}, ${posY}, ${posZ})`, 15, 25);
+            this.canvasCtx.fillText(`Rotation: Yaw ${yawDegrees}°, Pitch ${pitchDegrees}°`, 15, 45);
+            this.canvasCtx.fillText(`Direction: ${this.getDirectionFromYaw(eye.orientation.yaw)}`, 15, 65);
+            
+            // Draw UI overlay text
+            this.canvasCtx.font = '12px Arial';
+            this.canvasCtx.fillStyle = 'black';
+            this.canvasCtx.fillText('Drag: rotate | Shift+drag: move | Wheel: zoom | Arrows: camera movement', 10, this.height - 10);
+            
+            // Draw active keys information
+            if (this.activeKeys.size > 0) {
+                const activeKeysText = Array.from(this.activeKeys)
+                    .map(key => {
+                        switch (key) {
+                            case 'ArrowUp': return '↑';
+                            case 'ArrowDown': return '↓';
+                            case 'ArrowLeft': return '←';
+                            case 'ArrowRight': return '→';
+                            default: return key;
+                        }
+                    })
+                    .join(' ');
+                
+                this.canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.canvasCtx.fillRect(10, this.height - 30, 100, 20);
+                this.canvasCtx.fillStyle = 'white';
+                this.canvasCtx.fillText(`Active keys: ${activeKeysText}`, 15, this.height - 15);
+            }
+        }
+    }
+    
+    /**
+     * Returns a cardinal direction string based on the camera's yaw angle
+     * @param yawRadians Camera's yaw in radians
+     * @returns String representing the approximate cardinal direction
+     */
+    private getDirectionFromYaw(yawRadians: number): string {
+        // Normalize to 0-2π range
+        const normalizedYaw = ((yawRadians % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        
+        // Convert to degrees for easier direction mapping
+        const degrees = normalizedYaw * 180 / Math.PI;
+        
+        // Map to cardinal directions
+        if (degrees >= 337.5 || degrees < 22.5) return 'North';
+        if (degrees >= 22.5 && degrees < 67.5) return 'North-East';
+        if (degrees >= 67.5 && degrees < 112.5) return 'East';
+        if (degrees >= 112.5 && degrees < 157.5) return 'South-East';
+        if (degrees >= 157.5 && degrees < 202.5) return 'South';
+        if (degrees >= 202.5 && degrees < 247.5) return 'South-West';
+        if (degrees >= 247.5 && degrees < 292.5) return 'West';
+        return 'North-West';
     }
     
     /**
